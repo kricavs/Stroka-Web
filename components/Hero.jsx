@@ -8,10 +8,10 @@ import { useEffect, useState } from "react";
 // image as protagonist, almost no text. Swap `slides` for your own images
 // (or replace the whole block with a <video>).
 const slides = [
-  "/portfolio/fotografia/05.jpg",
-  "/portfolio/drone/05.jpg",
-  "/portfolio/eventos/05.jpg",
-  "/portfolio/marcas/05.jpg",
+  "/hero/01.jpg",
+  "/hero/02.jpg",
+  "/hero/03.jpg",
+  "/hero/04.jpg",
 ];
 
 export default function Hero() {

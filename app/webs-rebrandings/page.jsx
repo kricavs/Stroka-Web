@@ -1,8 +1,7 @@
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
-import Gallery from "@/components/Gallery";
-import { getCategory } from "@/lib/site";
-import { getCategoryItems } from "@/lib/portfolio";
+import ProjectGrid from "@/components/portfolio/ProjectGrid";
+import { getProjectsByCategory } from "@/lib/portfolio";
 
 export const metadata = {
   title: "Webs y rebrandings — Stroka Visual",
@@ -10,11 +9,8 @@ export const metadata = {
     "Diseño web, identidad visual y rediseño de marca con la estética de Stroka Visual.",
 };
 
-export const revalidate = 3600;
-
-export default async function WebsPage() {
-  const cat = getCategory("webs-rebrandings");
-  const items = await getCategoryItems(cat);
+export default function WebsPage() {
+  const projects = getProjectsByCategory("webs-rebrandings");
 
   return (
     <>
@@ -25,7 +21,7 @@ export default async function WebsPage() {
       />
 
       <section className="mx-auto max-w-7xl px-6 pb-24 md:px-10">
-        <Gallery categories={[{ ...cat, items }]} showFilters={false} />
+        <ProjectGrid projects={projects} showFilters={false} />
       </section>
 
       <div className="mx-auto max-w-7xl px-6 pb-32 md:px-10">
