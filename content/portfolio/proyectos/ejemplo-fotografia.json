@@ -1,0 +1,32 @@
+{
+  "example": true,
+  "title": "Proyecto de ejemplo — Fotografía",
+  "category": "fotografia",
+  "description": "Proyecto de ejemplo para probar la estructura del portfolio. Reemplazalo por un trabajo real o borralo junto con su carpeta de fotos.",
+  "cover": {
+    "file": "cover.jpg",
+    "alt": "Imagen de prueba de la categoría Fotografía"
+  },
+  "photos": [
+    {
+      "file": "02.jpg",
+      "alt": "Imagen de prueba 02 de la categoría Fotografía"
+    },
+    {
+      "file": "03.jpg",
+      "alt": "Imagen de prueba 03 de la categoría Fotografía"
+    },
+    {
+      "file": "04.jpg",
+      "alt": "Imagen de prueba 04 de la categoría Fotografía"
+    },
+    {
+      "file": "05.jpg",
+      "alt": "Imagen de prueba 05 de la categoría Fotografía"
+    },
+    {
+      "file": "06.jpg",
+      "alt": "Imagen de prueba 06 de la categoría Fotografía"
+    }
+  ]
+}
