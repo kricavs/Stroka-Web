@@ -11,6 +11,9 @@ module.exports = {
         ink: "#0a0a0b",
         bone: "#f4f4f2",
         ash: "#8a8a8a",
+        // Studio (private area) accent.
+        champagne: "#c8b697",
+        graphite: "#17171a",
         // Electric blue — used only as a minimal accent.
         electric: "#1f6bff",
       },

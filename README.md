@@ -1,8 +1,9 @@
 # Stroka Visual
 
 Sitio de portfolio para la productora audiovisual **Stroka Visual**.
-Next.js (App Router) + Tailwind CSS. Sin CMS, sin base de datos, sin login,
-sin middleware. Estética editorial, cinematográfica, negro y blanco con un
+Next.js (App Router) + Tailwind CSS. El sitio público no usa CMS ni base de
+datos; la zona privada `/studio` (presupuestos) tiene login, middleware y
+Postgres (ver [Stroka Studio](#stroka-studio--presupuestos-privados)). Estética editorial, cinematográfica, negro y blanco con un
 único detalle azul. Imágenes desde **Cloudinary** con fallback local.
 
 ## Requisitos
@@ -131,3 +132,96 @@ public/
   logo-stroka.svg        ← reemplazá por tu logo
   portfolio/<categoria>/ Placeholders locales (fallback)
 ```
+
+
+---
+
+# Stroka Studio — presupuestos privados
+
+Herramienta interna en `/studio` (separada del sitio público, con su propio
+layout). Crea, guarda, edita, duplica y elimina presupuestos, con vista previa
+A4 y exportación a PDF.
+
+## Arquitectura
+
+| Capa | Dónde | Notas |
+|---|---|---|
+| Config institucional | `lib/studio/config.js` | Datos de Stroka (email, teléfono, Instagram…). **El teléfono está vacío**: completalo ahí; mientras esté vacío no aparece en el PDF. |
+| Cálculo / validación | `lib/studio/calc.js`, `validate.js` | Funciones puras compartidas. El servidor **recalcula** totales siempre. |
+| Auth | `middleware.js`, `lib/studio/session.js`, `lib/studio/server/{auth,password.mjs}` | Usuario/password por variables de entorno + cookie firmada (HMAC). |
+| Persistencia | `lib/studio/server/{db,budgets}.js` | Postgres. |
+| API | `app/api/studio/*` | Todas verifican sesión. |
+| UI | `app/studio/*`, `components/studio/*` | |
+| Plantilla PDF | `lib/studio/pdf/*` | Un único documento (`BudgetDocument`) para preview y export. |
+
+## Decisiones
+
+- **Autenticación**: sin proveedor externo. `STUDIO_USER` + `STUDIO_PASSWORD_HASH`
+  (scrypt) y cookie `stk_studio` (HttpOnly, SameSite=Strict, Secure en producción,
+  7 días) firmada con `STUDIO_SESSION_SECRET`. Se verifica en el middleware
+  (servidor) **y** otra vez en cada página/handler. Mutaciones: chequeo de
+  `Origin`. Login con retardo y bloqueo de 1 min tras 5 fallos (por instancia).
+- **Persistencia**: el sitio se despliega en Vercel (filesystem efímero), así que
+  hace falta una base externa. Se usa **Postgres estándar** (driver `pg`):
+  Neon, Supabase o Vercel Postgres sirven igual. Una tabla `studio_budgets`
+  (columnas indexables + `data` JSONB) y `studio_counters` para la numeración
+  `STK-AAAA-NNN` (upsert atómico + `UNIQUE`: sin duplicados aunque haya
+  guardados simultáneos; los números eliminados no se reutilizan).
+  En desarrollo sin `DATABASE_URL` se usa Postgres embebido (PGlite) en `./.data`
+  (ignorado por git). En producción `DATABASE_URL` es obligatoria.
+- **PDF**: `@react-pdf/renderer`. Texto real seleccionable, fuentes incrustadas
+  (Barlow Condensed + Inter, en `public/studio-fonts`, licencia OFL), vectores,
+  A4, paginación con bloques indivisibles, cabecera corrida y footer en cada
+  página. El PDF se genera **en el navegador** (sin carga en el servidor ni
+  límites de tiempo de Vercel). La vista previa rasteriza ese mismo PDF con
+  pdf.js, por lo que preview y exportación no pueden divergir.
+- Sin fotografías: identidad solo con logo, tipografía, escala, líneas y color.
+  Las notas internas **nunca** se renderizan en el PDF.
+
+## Variables de entorno
+
+Ver `.env.example`.
+
+| Variable | Descripción |
+|---|---|
+| `STUDIO_USER` | Usuario de login. |
+| `STUDIO_PASSWORD_HASH` | Hash scrypt de la contraseña. |
+| `STUDIO_SESSION_SECRET` | ≥ 32 caracteres aleatorios. Cambiarlo cierra todas las sesiones. |
+| `DATABASE_URL` | Cadena de conexión Postgres (obligatoria en producción). |
+
+## Configuración
+
+1. `npm install`
+2. Generá hash y secret: `npm run studio:hash -- "tu-password-larga"` (imprime
+   `STUDIO_PASSWORD_HASH` y `STUDIO_SESSION_SECRET`).
+3. Copiá `.env.example` a `.env.local` y pegá los valores.
+
+## Desarrollo local
+
+`npm run dev` → http://localhost:3000/studio (sin `DATABASE_URL` usa la base embebida).
+
+## Despliegue (Vercel)
+
+1. Creá una base Postgres (p. ej. Vercel → Storage → Neon, o neon.tech) y copiá su `DATABASE_URL`.
+2. En *Settings → Environment Variables* cargá las 4 variables de arriba.
+3. Deploy. Las tablas se crean solas en el primer uso (`CREATE TABLE IF NOT EXISTS`).
+
+### Migraciones
+
+El esquema vive en `lib/studio/server/db.js` y es idempotente. Los presupuestos
+guardan su contenido en JSONB, por lo que agregar campos no requiere migrar
+columnas; cambios estructurales futuros se agregarían como sentencias
+`ALTER TABLE ... IF NOT EXISTS` en ese mismo archivo.
+
+### Backup / exportación
+
+- Botón **Exportar backup** en el historial → JSON con todos los presupuestos.
+- O `pg_dump "$DATABASE_URL" -t studio_budgets -t studio_counters > backup.sql`.
+
+## Límites conocidos
+
+- El bloqueo de intentos de login es en memoria (por instancia serverless); la
+  contraseña larga + scrypt es la defensa principal.
+- Un solo usuario (las credenciales viven en variables de entorno).
+- La vista previa tarda ~1 s tras dejar de escribir.
+- La fecha por defecto usa la hora del navegador; el duplicado usa la del servidor (UTC).
