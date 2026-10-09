@@ -93,6 +93,9 @@ export default function BudgetEditor({ initial }) {
               {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
             </Select>
           </Field>
+          <Field label="Introducción (opcional)" className="sm:col-span-2" hint={`${(b.intro || "").length}/400 · texto breve bajo el título y el cliente`}>
+            <Textarea rows={3} maxLength={400} value={b.intro || ""} onChange={(e) => set({ intro: e.target.value })} />
+          </Field>
           <Field label="Fecha del presupuesto"><Input type="date" value={b.date} onChange={(e) => set({ date: e.target.value })} /></Field>
           <Field label="Validez (días)"><Input type="number" min={1} max={730} value={b.validDays} onChange={(e) => set({ validDays: e.target.value })} /></Field>
         </div>

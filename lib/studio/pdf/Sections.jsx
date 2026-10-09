@@ -94,6 +94,7 @@ export function Simple({ b }) {
   return (
     <View style={{ marginTop: 28 }}>
       <Text minPresenceAhead={80} style={display(26, { letterSpacing: 0.6 })}>{(s.title || "").toUpperCase()}</Text>
+      {s.description ? <Body style={{ marginTop: 10, maxWidth: 400 }}>{s.description}</Body> : null}
       {(hasD || s.scope) && (
         <View wrap={false} style={{ flexDirection: "row", marginTop: 14 }}>
           {hasD && (

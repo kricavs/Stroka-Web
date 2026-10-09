@@ -154,6 +154,14 @@ A4 y exportación a PDF.
 | UI | `app/studio/*`, `components/studio/*` | |
 | Plantilla PDF | `lib/studio/pdf/*` | Un único documento (`BudgetDocument`) para preview y export. |
 
+## Modelo de presupuesto: `intro`
+
+Campo opcional `intro` (texto breve, máx. 400 caracteres) para los tres tipos.
+Se edita en *General*, se valida/normaliza en `lib/studio/validate.js`, se
+guarda en el JSONB `data` (sin migración: los presupuestos viejos simplemente no
+lo tienen), se copia al duplicar y se muestra bajo título/cliente en preview y
+PDF. Vacío = no ocupa espacio.
+
 ## Decisiones
 
 - **Autenticación**: sin proveedor externo. `STUDIO_USER` + `STUDIO_PASSWORD_HASH`

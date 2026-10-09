@@ -11,8 +11,7 @@ export default function BudgetDocument({ budget: b, logoSrc }) {
   const number = b.number || "PENDIENTE";
   const typeLabel = PROPOSAL_TYPES.find((t) => t.value === b.type)?.label || "";
   const validUntil = b.date && b.validDays ? formatDate(addDays(b.date, b.validDays)) : "";
-  // Simple proposals show their description as the intro paragraph under the title.
-  const intro = b.type === "simple" ? b.simple?.description : "";
+  const intro = (b.intro || "").trim();
 
   return (
     <Document
