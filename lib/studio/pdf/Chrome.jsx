@@ -13,7 +13,7 @@ export function Cover({ budget, logoSrc, typeLabel, intro }) {
     <View style={{ marginTop: -40 }}>
       <Image src={logoSrc} style={logoDims(34)} />
       <Text
-        style={{ fontFamily: F.body, fontSize: 11, fontWeight: 300, letterSpacing: 2.2, color: C.champagne, marginTop: 38 }}
+        style={{ fontFamily: F.body, fontSize: 11, fontWeight: 300, letterSpacing: 2.2, color: C.champagne, marginTop: 34 }}
       >
         {typeLabel.toUpperCase()}
       </Text>
@@ -24,7 +24,7 @@ export function Cover({ budget, logoSrc, typeLabel, intro }) {
         {(budget.clientName || "Cliente").toUpperCase()}
       </Text>
       <Accent width={34} style={{ marginTop: 9 }} />
-      {intro ? <Body style={{ marginTop: 16, fontSize: 9.5, maxWidth: 360 }}>{intro}</Body> : null}
+      {intro ? <Body style={{ marginTop: 13, fontSize: 9.5, maxWidth: 360 }}>{intro}</Body> : null}
     </View>
   );
 }

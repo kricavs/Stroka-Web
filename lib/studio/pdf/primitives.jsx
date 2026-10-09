@@ -97,7 +97,7 @@ export function Body({ children, style }) {
 
 export function Feature({ children, size = 9 }) {
   return (
-    <View wrap={false} style={{ flexDirection: "row", alignItems: "flex-start", marginBottom: 7 }}>
+    <View wrap={false} style={{ flexDirection: "row", alignItems: "flex-start", marginBottom: 6 }}>
       <View style={{ width: 16, paddingTop: 1 }}><CheckIcon size={size + 1} /></View>
       <Rich style={{ flex: 1, fontFamily: F.body, fontSize: size, fontWeight: 300, lineHeight: 1.45, color: C.text }}>
         {children}

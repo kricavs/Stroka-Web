@@ -9,7 +9,7 @@ export function Meta({ items }) {
   return (
     <View
       wrap={false}
-      style={{ flexDirection: "row", marginTop: 26, paddingVertical: 14, borderTopWidth: 0.5, borderBottomWidth: 0.5, borderColor: C.line }}
+      style={{ flexDirection: "row", marginTop: 22, paddingVertical: 12, borderTopWidth: 0.5, borderBottomWidth: 0.5, borderColor: C.line }}
     >
       {items.map((it, i) => (
         <View key={it.label} style={{ flex: 1, paddingLeft: i ? 14 : 0, borderLeftWidth: i ? 0.5 : 0, borderLeftColor: C.line }}>
@@ -33,15 +33,15 @@ function PriceLine({ amount, currency, unit, size }) {
 export function Plans({ plans, currency }) {
   const n = plans.length || 1;
   return (
-    <View wrap={false} style={{ marginTop: 26 }}>
+    <View wrap={false} style={{ marginTop: 22 }}>
       <View style={{ flexDirection: "row" }}>
         {plans.map((p, i) => (
-          <Box key={p.id} style={{ flex: 1, backgroundColor: C.panel, padding: n === 3 ? 14 : 18, marginLeft: i ? 14 : 0 }}>
+          <Box key={p.id} style={{ flex: 1, backgroundColor: C.panel, padding: n === 3 ? 14 : 16, marginLeft: i ? 14 : 0 }}>
             <Tag>{p.name || `Plan ${i + 1}`}</Tag>
             <View style={{ marginTop: 14 }}>
               <PriceLine amount={formatMoney(p.price, currency).replace(/^(\S+) /, "$1")} unit={p.unit} size={n === 3 ? 30 : 38} />
             </View>
-            <Accent width={64} style={{ marginTop: 10, marginBottom: 14 }} />
+            <Accent width={64} style={{ marginTop: 8, marginBottom: 12 }} />
             {p.description ? <Body style={{ fontSize: 8.5, color: C.grey, marginBottom: 12 }}>{p.description}</Body> : null}
             {p.features.map((f, k) => (
               <Feature key={k} size={n === 3 ? 8.2 : 9}>{f}</Feature>
@@ -53,8 +53,28 @@ export function Plans({ plans, currency }) {
   );
 }
 
-function Totals({ b }) {
+function Totals({ b, wide = false }) {
   const hasDiscount = b.discountAmount > 0;
+  if (wide) {
+    // Full-width price strip (simple proposals): compact, stays with its content.
+    return (
+      <Box wrap={false} style={{ marginTop: 14, backgroundColor: C.panel, paddingVertical: 14, paddingHorizontal: 18, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <View style={{ width: 230 }}>
+          <Tag>Total</Tag>
+          {hasDiscount && (
+            <View style={{ marginTop: 10 }}>
+              <Row label="Subtotal" value={formatMoney(b.subtotal, b.currency)} />
+              <Row label={b.discount.kind === "percent" ? `Descuento ${b.discount.value}%` : "Descuento"} value={`– ${formatMoney(b.discountAmount, b.currency)}`} accent />
+            </View>
+          )}
+        </View>
+        <View style={{ alignItems: "flex-end" }}>
+          <PriceLine amount={formatMoney(b.total, b.currency).replace(/^(\S+) /, "$1")} unit={b.currency} size={40} />
+          <Accent width={64} style={{ marginTop: 6 }} />
+        </View>
+      </Box>
+    );
+  }
   return (
     <View wrap={false} style={{ marginTop: 20, flexDirection: "row", justifyContent: "flex-end" }}>
       <Box style={{ width: 280, backgroundColor: C.panel, padding: 16 }}>
@@ -111,7 +131,7 @@ export function Simple({ b }) {
           ) : null}
         </View>
       )}
-      <Totals b={b} />
+      <Totals b={b} wide />
     </View>
   );
 }
@@ -161,7 +181,7 @@ export function NoteBox({ text }) {
   if (!text) return null;
   const [first, ...rest] = text.split("\n");
   return (
-    <Box wrap={false} style={{ marginTop: 34, flexDirection: "row", alignItems: "center", paddingVertical: 14, paddingHorizontal: 18 }}>
+    <Box wrap={false} style={{ marginTop: 20, flexDirection: "row", alignItems: "center", paddingVertical: 10, paddingHorizontal: 18 }}>
       <InfoIcon size={22} />
       <View style={{ width: 0.5, alignSelf: "stretch", backgroundColor: C.border, marginHorizontal: 16 }} />
       <View style={{ flex: 1 }}>
