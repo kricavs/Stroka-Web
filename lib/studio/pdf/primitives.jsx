@@ -1,5 +1,6 @@
 import { Circle, Path, Svg, Text, View } from "@react-pdf/renderer";
 import { C, F } from "./theme";
+import { pick, useCompact } from "./density";
 
 export const display = (size, extra) => ({
   fontFamily: F.display,
@@ -84,11 +85,12 @@ export function Rich({ children, style, bold = C.text }) {
 }
 
 export function Body({ children, style }) {
+  const c = useCompact();
   return (
     <Text
       orphans={2}
       widows={2}
-      style={{ fontFamily: F.body, fontSize: 9, fontWeight: 300, lineHeight: 1.65, color: C.text, ...style }}
+      style={{ fontFamily: F.body, fontSize: 9, fontWeight: 300, lineHeight: pick(c, 1.65, 1.55), color: C.text, ...style }}
     >
       {children}
     </Text>
@@ -108,8 +110,9 @@ export function Feature({ children, size = 9 }) {
 
 // Section heading: champagne tag-less label + hairline, kept with what follows.
 export function SectionHead({ children }) {
+  const c = useCompact();
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", marginTop: 30, marginBottom: 16 }}>
+    <View style={{ flexDirection: "row", alignItems: "center", marginTop: pick(c, 30, 16), marginBottom: pick(c, 16, 10) }}>
       <Label color={C.champagne} style={{ fontSize: 7, fontWeight: 600, letterSpacing: 2.4 }}>{children}</Label>
       <Rule style={{ flex: 1, marginLeft: 12 }} />
     </View>

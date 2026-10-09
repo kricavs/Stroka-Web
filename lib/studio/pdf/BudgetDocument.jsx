@@ -1,19 +1,21 @@
-import { Document, Page } from "@react-pdf/renderer";
+import { Document, Page, View } from "@react-pdf/renderer";
 import { STUDIO_BRAND as B, PROPOSAL_TYPES } from "../config";
 import { addDays, formatDate } from "../calc";
 import { C, F, PAGE } from "./theme";
 import { Cover, Footer, RunningHeader, SideText } from "./Chrome";
+import { DensityContext, pick } from "./density";
 import { Detailed, Meta, NoteBox, Plans, Simple, TextBlock } from "./Sections";
 
 // Single template used by BOTH the live preview and the PDF export.
 // internalNote is intentionally never rendered.
-export default function BudgetDocument({ budget: b, logoSrc }) {
+export default function BudgetDocument({ budget: b, logoSrc, compact = false, onPages }) {
   const number = b.number || "PENDIENTE";
   const typeLabel = PROPOSAL_TYPES.find((t) => t.value === b.type)?.label || "";
   const validUntil = b.date && b.validDays ? formatDate(addDays(b.date, b.validDays)) : "";
   const intro = (b.intro || "").trim();
 
   return (
+    <DensityContext.Provider value={compact}>
     <Document
       title={`Presupuesto ${number} — ${b.clientName || ""}`.trim()}
       author={B.name}
@@ -25,8 +27,8 @@ export default function BudgetDocument({ budget: b, logoSrc }) {
         style={{
           backgroundColor: C.ink,
           color: C.text,
-          paddingTop: PAGE.top,
-          paddingBottom: PAGE.bottom,
+          paddingTop: pick(compact, PAGE.top, PAGE.top - 6),
+          paddingBottom: pick(compact, PAGE.bottom, PAGE.bottom - 6),
           paddingHorizontal: PAGE.margin,
           fontFamily: F.body,
         }}
@@ -46,10 +48,14 @@ export default function BudgetDocument({ budget: b, logoSrc }) {
         {b.type === "simple" && <Simple b={b} />}
         {b.type === "detailed" && <Detailed b={b} />}
         <TextBlock title="Forma de pago" text={b.paymentTerms} />
-        <TextBlock title="Condiciones" text={b.conditions} />
-        <NoteBox text={b.clientNote} />
-        <Footer />
+        {/* short conditions travel with the note, so a page never holds only a note */}
+        <View wrap={(b.conditions || "").length > 600}>
+          <TextBlock title="Condiciones" text={b.conditions} />
+          <NoteBox text={b.clientNote} />
+        </View>
+        <Footer onPages={onPages} />
       </Page>
     </Document>
+    </DensityContext.Provider>
   );
 }

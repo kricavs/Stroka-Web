@@ -3,23 +3,25 @@ import { Image, Text, View } from "@react-pdf/renderer";
 import { STUDIO_BRAND as B } from "../config";
 import { C, F, PAGE, titleSize } from "./theme";
 import { Accent, Body, Label, Rule, display } from "./primitives";
+import { pick, useCompact } from "./density";
 
 const logoDims = (h) => ({ height: h, width: (h * B.logoWidth) / B.logoHeight });
 
 // First-page header: logo, champagne eyebrow, huge condensed title, client.
 export function Cover({ budget, logoSrc, typeLabel, intro }) {
+  const compact = useCompact();
   const title = (budget.projectName || "Proyecto").toUpperCase();
   return (
     <View style={{ marginTop: -40 }}>
       <Image src={logoSrc} style={logoDims(34)} />
       <Text
-        style={{ fontFamily: F.body, fontSize: 11, fontWeight: 300, letterSpacing: 2.2, color: C.champagne, marginTop: 34 }}
+        style={{ fontFamily: F.body, fontSize: 11, fontWeight: 300, letterSpacing: 2.2, color: C.champagne, marginTop: pick(compact, 34, 24) }}
       >
         {typeLabel.toUpperCase()}
       </Text>
       <Text style={display(titleSize(title), { lineHeight: 1.04, letterSpacing: 0.4, marginTop: 10 })}>{title}</Text>
       <Text
-        style={{ fontFamily: F.body, fontSize: 13, fontWeight: 300, letterSpacing: 3.4, color: C.champagne, marginTop: 26 }}
+        style={{ fontFamily: F.body, fontSize: 13, fontWeight: 300, letterSpacing: 3.4, color: C.champagne, marginTop: pick(compact, 26, 20) }}
       >
         {(budget.clientName || "Cliente").toUpperCase()}
       </Text>
@@ -84,7 +86,7 @@ export function RunningHeader({ number, logoSrc }) {
 }
 
 // Institutional footer on every page.
-export function Footer() {
+export function Footer({ onPages }) {
   const contact = [B.email, B.phone, B.website, B.instagram, B.location].filter(Boolean);
   return (
     <View fixed style={{ position: "absolute", bottom: 28, left: PAGE.margin, right: PAGE.margin }}>
@@ -106,9 +108,10 @@ export function Footer() {
           </Text>
           <Text
             style={{ fontFamily: F.body, fontSize: 6.5, color: C.champagne, letterSpacing: 1.6, marginTop: 5 }}
-            render={({ pageNumber, totalPages }) =>
-              `${String(pageNumber).padStart(2, "0")} / ${String(totalPages).padStart(2, "0")}`
-            }
+            render={({ pageNumber, totalPages }) => {
+              if (onPages) onPages(totalPages);
+              return `${String(pageNumber).padStart(2, "0")} / ${String(totalPages).padStart(2, "0")}`;
+            }}
           />
         </View>
       </View>

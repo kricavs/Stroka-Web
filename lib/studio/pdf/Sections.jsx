@@ -1,15 +1,17 @@
 import { Text, View } from "@react-pdf/renderer";
 import { formatMoney, lineTotal } from "../calc";
 import { C, F } from "./theme";
+import { pick, useCompact } from "./density";
 import { Accent, Body, Box, Feature, InfoIcon, Label, Rule, SectionHead, Tag, display } from "./primitives";
 
 const unitStyle = { fontFamily: F.body, fontSize: 10, fontWeight: 300, color: C.champagne, letterSpacing: 0.3 };
 
 export function Meta({ items }) {
+  const c = useCompact();
   return (
     <View
       wrap={false}
-      style={{ flexDirection: "row", marginTop: 22, paddingVertical: 12, borderTopWidth: 0.5, borderBottomWidth: 0.5, borderColor: C.line }}
+      style={{ flexDirection: "row", marginTop: pick(c, 22, 16), paddingVertical: pick(c, 12, 10), borderTopWidth: 0.5, borderBottomWidth: 0.5, borderColor: C.line }}
     >
       {items.map((it, i) => (
         <View key={it.label} style={{ flex: 1, paddingLeft: i ? 14 : 0, borderLeftWidth: i ? 0.5 : 0, borderLeftColor: C.line }}>
@@ -54,11 +56,13 @@ export function Plans({ plans, currency }) {
 }
 
 function Totals({ b, wide = false }) {
+  const compact = useCompact();
   const hasDiscount = b.discountAmount > 0;
-  if (wide) {
+  // Compact mode: a single-service detail uses the slim price strip too.
+  if (wide || (compact && b.type === "detailed" && b.items.length === 1)) {
     // Full-width price strip (simple proposals): compact, stays with its content.
     return (
-      <Box wrap={false} style={{ marginTop: 14, backgroundColor: C.panel, paddingVertical: 14, paddingHorizontal: 18, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+      <Box wrap={false} style={{ marginTop: pick(compact, 14, 12), backgroundColor: C.panel, paddingVertical: pick(compact, 14, 11), paddingHorizontal: 18, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <View style={{ width: 230 }}>
           <Tag>Total</Tag>
           {hasDiscount && (
@@ -137,6 +141,7 @@ export function Simple({ b }) {
 }
 
 export function Detailed({ b }) {
+  const compact = useCompact();
   return (
     <View>
       <View minPresenceAhead={120}><SectionHead>Servicios</SectionHead></View>
@@ -144,7 +149,7 @@ export function Detailed({ b }) {
         <View
           key={it.id}
           wrap={false}
-          style={{ flexDirection: "row", paddingVertical: 15, borderTopWidth: 0.5, borderTopColor: C.line }}
+          style={{ flexDirection: "row", paddingVertical: pick(compact, 15, 10), borderTopWidth: 0.5, borderTopColor: C.line }}
         >
           <Text style={{ fontFamily: F.body, fontSize: 8, fontWeight: 500, letterSpacing: 1.4, color: C.champagne, width: 30, paddingTop: 4 }}>
             {String(i + 1).padStart(2, "0")}
@@ -178,10 +183,11 @@ export function TextBlock({ title, text }) {
 
 // Boxed note with info icon (first line white, the rest secondary grey).
 export function NoteBox({ text }) {
+  const c = useCompact();
   if (!text) return null;
   const [first, ...rest] = text.split("\n");
   return (
-    <Box wrap={false} style={{ marginTop: 20, flexDirection: "row", alignItems: "center", paddingVertical: 10, paddingHorizontal: 18 }}>
+    <Box wrap={false} style={{ marginTop: pick(c, 20, 14), flexDirection: "row", alignItems: "center", paddingVertical: pick(c, 10, 8), paddingHorizontal: 18 }}>
       <InfoIcon size={22} />
       <View style={{ width: 0.5, alignSelf: "stretch", backgroundColor: C.border, marginHorizontal: 16 }} />
       <View style={{ flex: 1 }}>
