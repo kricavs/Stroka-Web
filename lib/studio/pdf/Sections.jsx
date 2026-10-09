@@ -140,7 +140,7 @@ export function Simple({ b }) {
   );
 }
 
-export function Detailed({ b }) {
+export function Detailed({ b, breakBefore }) {
   const compact = useCompact();
   return (
     <View>
@@ -149,6 +149,7 @@ export function Detailed({ b }) {
         <View
           key={it.id}
           wrap={false}
+          break={breakBefore === `item:${i}`}
           style={{ flexDirection: "row", paddingVertical: pick(compact, 15, 10), borderTopWidth: 0.5, borderTopColor: C.line }}
         >
           <Text style={{ fontFamily: F.body, fontSize: 8, fontWeight: 500, letterSpacing: 1.4, color: C.champagne, width: 30, paddingTop: 4 }}>
@@ -170,11 +171,11 @@ export function Detailed({ b }) {
   );
 }
 
-export function TextBlock({ title, text }) {
+export function TextBlock({ title, text, forceBreak = false }) {
   if (!text) return null;
   return (
     // short blocks never split (no orphaned heading); long ones may flow across pages
-    <View wrap={text.length > 600}>
+    <View wrap={text.length > 600} break={forceBreak}>
       <SectionHead>{title}</SectionHead>
       <Body>{text}</Body>
     </View>
