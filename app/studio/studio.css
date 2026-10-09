@@ -1,0 +1,7 @@
+/* Private studio only: heavy condensed title face (same as the PDF). */
+@font-face {
+  font-family: "StrokaTitle";
+  src: url("/studio-fonts/anton-latin-400-normal.woff") format("woff");
+  font-weight: 400;
+  font-display: swap;
+}
