@@ -1,12 +1,12 @@
 // Small set of form primitives in the Stroka look (dark, hairlines, champagne).
 
 const inputCls =
-  "w-full border border-bone/15 bg-transparent px-3 py-2.5 text-sm text-bone placeholder:text-ash/60 focus:border-champagne focus:outline-none";
+  "w-full border border-edge bg-panel px-3 py-2.5 text-sm font-light text-bone placeholder:text-ash/50 focus:border-champagne focus:outline-none";
 
 export function Field({ label, hint, children, className = "" }) {
   return (
     <label className={`block ${className}`}>
-      <span className="mb-1.5 block text-[0.62rem] uppercase tracking-wider2 text-ash">{label}</span>
+      <span className="mb-1.5 block text-[0.6rem] font-medium uppercase tracking-wider2 text-ash">{label}</span>
       {children}
       {hint && <span className="mt-1 block text-xs text-ash/70">{hint}</span>}
     </label>
@@ -23,7 +23,7 @@ export function Textarea({ rows = 3, ...props }) {
 
 export function Select({ children, ...props }) {
   return (
-    <select {...props} className={`${inputCls} bg-ink ${props.className || ""}`}>
+    <select {...props} className={`${inputCls} bg-panel ${props.className || ""}`}>
       {children}
     </select>
   );
@@ -31,10 +31,10 @@ export function Select({ children, ...props }) {
 
 export function Button({ variant = "line", className = "", ...props }) {
   const v = {
-    solid: "bg-bone text-ink hover:bg-champagne",
-    line: "border border-bone/25 text-bone hover:border-champagne hover:text-champagne",
+    solid: "bg-champagne font-semibold text-ink hover:bg-bone",
+    line: "border border-[#55524d] text-bone hover:border-champagne hover:text-champagne",
     ghost: "text-ash hover:text-bone",
-    danger: "border border-red-400/40 text-red-300 hover:bg-red-400/10",
+    danger: "border border-[#a0615a] text-[#d49a92] hover:bg-[#a0615a]/15",
   }[variant];
   return (
     <button
@@ -46,9 +46,10 @@ export function Button({ variant = "line", className = "", ...props }) {
 
 export function Section({ title, children, aside }) {
   return (
-    <section className="border-t hairline pt-5">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="font-display text-[0.72rem] font-medium uppercase tracking-wider3 text-champagne">{title}</h2>
+    <section className="pt-2">
+      <div className="mb-5 flex items-center gap-4">
+        <h2 className="text-[0.66rem] font-semibold uppercase tracking-[0.3em] text-champagne">{title}</h2>
+        <span className="h-px flex-1 bg-edge" />
         {aside}
       </div>
       {children}

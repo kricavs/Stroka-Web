@@ -27,7 +27,7 @@ export default function LoginForm() {
   }
 
   return (
-    <form onSubmit={submit} className="mt-10 space-y-5">
+    <form onSubmit={submit} className="mt-9 space-y-5">
       <Field label="Usuario">
         <Input name="user" autoComplete="username" required autoFocus />
       </Field>

@@ -78,7 +78,7 @@ export default function BudgetEditor({ initial }) {
   }
 
   const editor = (
-    <div className="space-y-8 pb-24">
+    <div className="space-y-9 pb-24">
       <Section title="General">
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Cliente *"><Input value={b.clientName} onChange={(e) => set({ clientName: e.target.value })} /></Field>
@@ -120,12 +120,12 @@ export default function BudgetEditor({ initial }) {
               </Field>
             )}
           </div>
-          <dl className="mt-5 space-y-1.5 border-t hairline pt-4 text-sm">
+          <dl className="mt-5 space-y-1.5 border-t border-edge pt-4 text-sm font-light">
             <Row k="Subtotal" v={formatMoney(totals.subtotal, b.currency)} />
             {totals.discountAmount > 0 && <Row k="Descuento" v={`– ${formatMoney(totals.discountAmount, b.currency)}`} />}
             <div className="flex items-baseline justify-between pt-2">
               <dt className="text-[0.62rem] uppercase tracking-wider2 text-champagne">Total</dt>
-              <dd className="font-display text-3xl">{formatMoney(totals.total, b.currency)}</dd>
+              <dd className="font-title text-4xl tracking-wide">{formatMoney(totals.total, b.currency)}</dd>
             </div>
           </dl>
         </Section>
@@ -147,10 +147,10 @@ export default function BudgetEditor({ initial }) {
 
   return (
     <div>
-      <div className="z-20 -mx-5 mb-6 flex flex-wrap items-center justify-between gap-3 border-b hairline bg-ink/95 px-5 py-3 backdrop-blur md:sticky md:top-0 md:-mx-8 md:px-8">
+      <div className="z-20 -mx-5 mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-edge bg-ink/95 px-5 py-3 backdrop-blur md:sticky md:top-0 md:-mx-8 md:px-8">
         <div className="flex items-center gap-4">
           <Link href="/studio/presupuestos" className="text-[0.65rem] uppercase tracking-wider2 text-ash hover:text-bone">← Historial</Link>
-          <span className="font-display tracking-wider2">{b.number || "NUEVO PRESUPUESTO"}</span>
+          <span className="font-title text-xl uppercase tracking-wider">{b.number || "Nuevo presupuesto"}</span>
           {dirty && <span className="text-[0.6rem] uppercase tracking-wider2 text-champagne">Sin guardar</span>}
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -163,14 +163,14 @@ export default function BudgetEditor({ initial }) {
       </div>
 
       {errors.length > 0 && (
-        <ul role="alert" className="mb-6 space-y-1 border border-red-400/40 bg-red-400/5 p-4 text-sm text-red-300">
+        <ul role="alert" className="mb-6 space-y-1 border border-[#a0615a] bg-[#a0615a]/10 p-4 text-sm text-[#d49a92]">
           {errors.map((e, i) => <li key={i}>• {e}</li>)}
         </ul>
       )}
 
       <div className="mb-5 flex gap-2 xl:hidden">
         {[["edit", "Editar"], ["preview", "Vista previa"]].map(([k, l]) => (
-          <button key={k} onClick={() => setTab(k)} className={`flex-1 border px-3 py-2 text-[0.65rem] uppercase tracking-wider2 ${tab === k ? "border-champagne text-champagne" : "border-bone/20 text-ash"}`}>{l}</button>
+          <button key={k} onClick={() => setTab(k)} className={`flex-1 border px-3 py-2 text-[0.65rem] uppercase tracking-wider2 ${tab === k ? "border-champagne text-champagne" : "border-edge text-ash"}`}>{l}</button>
         ))}
       </div>
 

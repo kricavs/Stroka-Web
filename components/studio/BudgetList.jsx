@@ -8,10 +8,10 @@ import { formatDate, formatMoney } from "@/lib/studio/calc";
 import { Button } from "./ui";
 
 export const STATUS_STYLE = {
-  BORRADOR: "border-bone/25 text-ash",
-  ENVIADO: "border-champagne/60 text-champagne",
-  APROBADO: "border-emerald-400/50 text-emerald-300",
-  RECHAZADO: "border-red-400/50 text-red-300",
+  BORRADOR: "border-[#55524d] text-ash",
+  ENVIADO: "border-champagne text-champagne",
+  APROBADO: "border-champagne bg-champagne font-semibold !text-ink",
+  RECHAZADO: "border-[#a0615a] text-[#d49a92]",
 };
 
 export default function BudgetList({ initial }) {
@@ -56,7 +56,7 @@ export default function BudgetList({ initial }) {
       <div className="overflow-x-auto">
         <table className="w-full min-w-[860px] text-left text-sm">
           <thead>
-            <tr className="border-b hairline text-[0.62rem] uppercase tracking-wider2 text-ash">
+            <tr className="border-b border-edge text-[0.6rem] uppercase tracking-[0.2em] text-champagne">
               {["Número", "Cliente", "Proyecto", "Fecha", "Total", "Estado", ""].map((h) => (
                 <th key={h} className="px-3 py-3 font-normal">{h}</th>
               ))}
@@ -64,28 +64,28 @@ export default function BudgetList({ initial }) {
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.id} className="border-b hairline align-middle hover:bg-bone/[0.03]">
-                <td className="px-3 py-4 font-display tracking-wider2">
+              <tr key={r.id} className="border-b border-edge align-middle hover:bg-panel">
+                <td className="whitespace-nowrap px-3 py-5 font-title text-lg tracking-wider">
                   <Link href={`/studio/presupuestos/${r.id}`} className="hover:text-champagne">{r.number}</Link>
                 </td>
-                <td className="px-3 py-4">{r.clientName}</td>
-                <td className="px-3 py-4 text-bone/80">{r.projectName}</td>
-                <td className="whitespace-nowrap px-3 py-4 text-ash">{formatDate(r.date)}</td>
-                <td className="whitespace-nowrap px-3 py-4">
+                <td className="px-3 py-5 font-light">{r.clientName}</td>
+                <td className="px-3 py-5 font-light text-bone/70">{r.projectName}</td>
+                <td className="whitespace-nowrap px-3 py-5 font-light text-ash">{formatDate(r.date)}</td>
+                <td className="whitespace-nowrap px-3 py-5 font-light">
                   {r.type === "plans" ? <span className="text-ash">Planes</span> : `${formatMoney(r.total, r.currency)}`}
                   <span className="ml-2 text-[0.6rem] tracking-wider2 text-ash">{r.currency}</span>
                 </td>
-                <td className="px-3 py-4">
+                <td className="px-3 py-5">
                   <select
                     aria-label="Estado"
                     value={r.status}
                     onChange={(e) => changeStatus(r.id, e.target.value)}
-                    className={`border bg-ink px-2 py-1 text-[0.62rem] uppercase tracking-wider2 ${STATUS_STYLE[r.status]}`}
+                    className={`border bg-ink px-2 py-1 text-[0.6rem] font-medium uppercase tracking-wider2 ${STATUS_STYLE[r.status]}`}
                   >
                     {STATUSES.map((s) => <option key={s}>{s}</option>)}
                   </select>
                 </td>
-                <td className="whitespace-nowrap px-3 py-4 text-right text-[0.65rem] uppercase tracking-wider2">
+                <td className="whitespace-nowrap px-3 py-5 text-right text-[0.65rem] uppercase tracking-wider2">
                   {confirmId === r.id ? (
                     <span className="inline-flex items-center gap-2">
                       <span className="text-ash">¿Eliminar?</span>
@@ -96,7 +96,7 @@ export default function BudgetList({ initial }) {
                     <span className="inline-flex gap-4 text-ash">
                       <Link href={`/studio/presupuestos/${r.id}`} className="hover:text-bone">Editar</Link>
                       <button onClick={() => duplicate(r.id)} className="uppercase tracking-wider2 hover:text-bone">Duplicar</button>
-                      <button onClick={() => setConfirmId(r.id)} className="uppercase tracking-wider2 hover:text-red-300">Eliminar</button>
+                      <button onClick={() => setConfirmId(r.id)} className="uppercase tracking-wider2 hover:text-[#d49a92]">Eliminar</button>
                     </span>
                   )}
                 </td>

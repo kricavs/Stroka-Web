@@ -1,4 +1,6 @@
 import Link from "next/link";
+import "./studio.css";
+import { Logo } from "@/components/Logo";
 import { hasSession } from "@/lib/studio/server/auth";
 import LogoutButton from "@/components/studio/LogoutButton";
 
@@ -15,15 +17,16 @@ export default async function StudioLayout({ children }) {
   const authed = await hasSession();
   return (
     <div className="min-h-screen bg-ink text-bone">
-      <header className="border-b hairline">
+      <header className="border-b border-edge">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-5 py-4 md:px-8">
-          <Link href="/studio/presupuestos" className="flex items-baseline gap-3">
-            <span className="font-display text-sm font-semibold tracking-[0.3em]">STROKA</span>
-            <span className="text-[0.62rem] uppercase tracking-wider3 text-champagne">Studio</span>
+          <Link href="/studio/presupuestos" className="flex items-center gap-4">
+            <Logo className="h-7 w-auto" />
+            <span className="hidden h-5 w-px bg-edge sm:inline-block" />
+            <span className="hidden text-[0.62rem] font-light uppercase tracking-wider3 text-champagne sm:inline">Studio</span>
           </Link>
           {authed && (
-            <nav className="flex items-center gap-6 text-[0.68rem] uppercase tracking-wider2 text-ash">
-              <Link href="/studio/presupuestos" className="hover:text-bone">Presupuestos</Link>
+            <nav className="flex items-center gap-5 sm:gap-6 text-[0.68rem] font-light uppercase tracking-wider2 text-ash">
+              <Link href="/studio/presupuestos" className="hover:text-champagne">Presupuestos</Link>
               <LogoutButton />
             </nav>
           )}

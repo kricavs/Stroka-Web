@@ -20,7 +20,7 @@ export function ItemsEditor({ b, set }) {
   return (
     <div className="space-y-4">
       {items.map((it, i) => (
-        <div key={it.id} className="border border-bone/10 p-4">
+        <div key={it.id} className="border border-edge bg-panel p-4">
           <div className="mb-3 flex items-center justify-between text-[0.62rem] uppercase tracking-wider2 text-ash">
             <span className="text-champagne">Ítem {String(i + 1).padStart(2, "0")}</span>
             <span className="flex gap-3">
@@ -37,7 +37,7 @@ export function ItemsEditor({ b, set }) {
               <Field label="Precio unitario"><Input {...numProps} value={it.unitPrice} onChange={(e) => upd(i, { unitPrice: e.target.value })} /></Field>
               <div>
                 <span className="mb-1.5 block text-[0.62rem] uppercase tracking-wider2 text-ash">Importe</span>
-                <p className="py-2.5 font-display text-lg">{formatMoney(lineTotal(it), b.currency)}</p>
+                <p className="py-2.5 font-title text-xl tracking-wide">{formatMoney(lineTotal(it), b.currency)}</p>
               </div>
             </div>
           </div>
@@ -54,7 +54,7 @@ export function PlansEditor({ b, set }) {
   return (
     <div className="space-y-4">
       {plans.map((p, i) => (
-        <div key={p.id} className="border border-bone/10 p-4">
+        <div key={p.id} className="border border-edge bg-panel p-4">
           <div className="mb-3 flex items-center justify-between text-[0.62rem] uppercase tracking-wider2 text-ash">
             <span className="text-champagne">Plan {String(i + 1).padStart(2, "0")}</span>
             <span className="flex gap-3">

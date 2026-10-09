@@ -65,11 +65,11 @@ export default function PdfPreview({ budget }) {
   useEffect(() => () => lastUrl.current && URL.revokeObjectURL(lastUrl.current), []);
 
   return (
-    <div ref={box} className="relative h-full min-h-[70vh] overflow-y-auto bg-graphite p-3">
+    <div ref={box} className="relative h-full min-h-[70vh] overflow-y-auto border border-edge bg-panel p-3">
       <div className="mx-auto space-y-3">
         {pages.map((src, i) => (
           // eslint-disable-next-line @next/next/no-img-element
-          <img key={i} src={src} alt={`Página ${i + 1} del presupuesto`} className="block w-full shadow-[0_0_0_1px_rgba(255,255,255,0.06)]" />
+          <img key={i} src={src} alt={`Página ${i + 1} del presupuesto`} className="block w-full shadow-[0_0_0_1px_#34312d]" />
         ))}
       </div>
       {(busy || error) && (

@@ -170,7 +170,7 @@ A4 y exportación a PDF.
   En desarrollo sin `DATABASE_URL` se usa Postgres embebido (PGlite) en `./.data`
   (ignorado por git). En producción `DATABASE_URL` es obligatoria.
 - **PDF**: `@react-pdf/renderer`. Texto real seleccionable, fuentes incrustadas
-  (Barlow Condensed + Inter, en `public/studio-fonts`, licencia OFL), vectores,
+  (Anton para títulos y precios + Inter para texto, en `public/studio-fonts`, licencia OFL), vectores,
   A4, paginación con bloques indivisibles, cabecera corrida y footer en cada
   página. El PDF se genera **en el navegador** (sin carga en el servidor ni
   límites de tiempo de Vercel). La vista previa rasteriza ese mismo PDF con

@@ -12,14 +12,17 @@ module.exports = {
         bone: "#f4f4f2",
         ash: "#8a8a8a",
         // Studio (private area) accent.
-        champagne: "#c8b697",
+        champagne: "#b9a388",
         graphite: "#17171a",
+        panel: "#100f0d",
+        edge: "#34312d",
         // Electric blue — used only as a minimal accent.
         electric: "#1f6bff",
       },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
         display: ["var(--font-display)", "system-ui", "sans-serif"],
+        title: ["StrokaTitle", "Impact", "sans-serif"],
       },
       letterSpacing: {
         wider2: "0.22em",
