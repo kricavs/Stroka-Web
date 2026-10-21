@@ -17,6 +17,9 @@ export default function Navbar() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  // Home and project pages keep a dark translucent bar at all times, so the
+  // menu never depends on the picture behind it.
+  const solid = pathname === "/" || pathname.startsWith("/portfolio/");
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -32,7 +35,9 @@ export default function Navbar() {
   return (
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ease-cine ${
-        scrolled || open
+        solid
+          ? "bg-ink/70 backdrop-blur-[8px] border-b hairline"
+          : scrolled || open
           ? "bg-ink/85 backdrop-blur-md border-b hairline"
           : "bg-transparent border-b border-transparent"
       }`}

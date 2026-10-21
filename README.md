@@ -3,8 +3,10 @@
 Sitio de portfolio para la productora audiovisual **Stroka Visual**.
 Next.js (App Router) + Tailwind CSS. El sitio público no usa CMS ni base de
 datos; la zona privada `/studio` (presupuestos) tiene login, middleware y
-Postgres (ver [Stroka Studio](#stroka-studio--presupuestos-privados)). Estética editorial, cinematográfica, negro y blanco con un
-único detalle azul. Imágenes desde **Cloudinary** con fallback local.
+Postgres (ver [Stroka Studio](#stroka-studio--presupuestos-privados)). Estética
+editorial, cinematográfica, negro y blanco con un único detalle azul. El
+portfolio se organiza por **proyectos**: fotos locales (optimizadas por
+Next.js) y videos en YouTube. Todo el contenido del portfolio vive en el repo.
 
 ## Requisitos
 
@@ -30,8 +32,7 @@ npm start
 
 1. Subí el proyecto a un repositorio (GitHub / GitLab).
 2. Importalo en https://vercel.com → New Project (framework Next.js autodetectado).
-3. (Opcional) Cargá las variables de Cloudinary en *Settings → Environment Variables*.
-4. Deploy.
+3. Deploy. No hay variables de entorno.
 
 ---
 
@@ -39,9 +40,9 @@ npm start
 
 El logo es un archivo en `public/`. Para reemplazarlo:
 
-- **Opción simple:** sobrescribí `public/logo-stroka.svg` con tu archivo
+- **Opción simple:** sobrescribí `public/logo-stroka.png` con tu archivo
   (manteniendo el nombre).
-- **Opción PNG:** dejá tu archivo en `public/logo-stroka.png` y en
+- **Otro nombre o formato:** dejá tu archivo en `public/` y en
   `lib/site.js` cambiá:
 
   ```js
@@ -56,48 +57,99 @@ No se recrea con texto: se usa tu archivo tal cual.
 
 ---
 
-## 2. Fotos del portfolio (Cloudinary)
+## 2. Portfolio por proyectos
 
-El portfolio lee imágenes de Cloudinary. **El panel de control es Cloudinary**:
-ahí subís, borrás, reemplazás y organizás. La web las muestra automáticamente.
+Cada tarjeta de `/portfolio` es un **proyecto** (un trabajo completo) y tiene su
+propia página en `/portfolio/<slug>`. No hay CMS, base de datos ni servicios
+externos: el contenido son archivos del repositorio.
 
-### Configurar
+```
+content/portfolio/
+  categorias.json              Categorías (filtros de /portfolio)
+  proyectos/<slug>.json        Un archivo por proyecto. El nombre = URL
+public/portfolio/<categoria>/<slug>/
+  cover.jpg  hero.jpg  01.jpg ...   Portada, banner y fotos del proyecto
+```
 
-1. Creá una cuenta en https://cloudinary.com
-2. Copiá `.env.example` a `.env.local` y completá:
+### Agregar un proyecto
 
+1. Elegí el **slug** (minúsculas, números y guiones): `kama-x1`.
+2. Creá la carpeta de fotos `public/portfolio/<categoria>/kama-x1/` y copiá ahí
+   `cover.webp` (tarjeta de `/portfolio`), `hero.webp` (banner de la página del
+   proyecto) y las demás fotos (`01.webp`, `02.webp`, …).
+3. Creá `content/portfolio/proyectos/kama-x1.json`:
+
+   ```json
+   {
+     "title": "KAMA X1",
+     "client": "Nombre del cliente",
+     "year": 2025,
+     "category": "marcas",
+     "services": ["Fotografía", "Video"],
+     "description": ["Primer párrafo.", "Segundo párrafo (opcional)."],
+     "cover": { "file": "cover.webp", "alt": "Describí la imagen de la tarjeta" },
+     "hero": { "file": "hero.webp", "alt": "Describí la imagen del banner" },
+     "photos": [
+       { "file": "01.webp", "alt": "Describí la foto" },
+       { "file": "02.webp", "alt": "Describí la foto" }
+     ],
+     "videos": ["https://youtu.be/XXXXXXXXXXX"]
+   }
    ```
-   CLOUDINARY_CLOUD_NAME=...
-   CLOUDINARY_API_KEY=...
-   CLOUDINARY_API_SECRET=...
-   ```
 
-3. En Cloudinary, subí tus imágenes y asignales un **tag** según la categoría.
-   El tag debe coincidir exactamente con estos slugs:
+4. `npm run dev`, abrí `/portfolio/kama-x1` y revisá. Listo: no se toca ningún
+   componente.
 
-   | Categoría            | Tag en Cloudinary    |
-   |----------------------|----------------------|
-   | Fotografía           | `fotografia`         |
-   | Video                | `video`              |
-   | Drone                | `drone`              |
-   | Eventos              | `eventos`            |
-   | Marcas               | `marcas`             |
-   | Institucional        | `institucional`      |
-   | Webs y rebrandings   | `webs-rebrandings`   |
+| Campo | Obligatorio | Notas |
+|-------|-------------|-------|
+| `title` | sí | Nombre del proyecto |
+| `category` | sí | Debe existir en `categorias.json` y coincide con la carpeta de fotos |
+| `cover` | sí | `{ file, alt }`. Imagen de la tarjeta en `/portfolio`. Recomendado: **1200 × 1500 px** (vertical 4:5) |
+| `hero` | sí | `{ file, alt }`. Banner de `/portfolio/<slug>`, usado solo ahí. Recomendado: **2400 × 1350 px** (horizontal 16:9). Se muestra con `object-cover` centrado, sin deformar. Si falta el archivo, el build falla indicando cuál |
+| `photos` | no | Lista de `{ file, alt }`, en el orden en que se muestran |
+| `videos` | no | Lista de IDs o URLs de YouTube (ver abajo) |
+| `client`, `year`, `services`, `description` | no | Si faltan, esa sección no se muestra. `description` puede ser texto o lista de párrafos |
+| `order` | no | Número. Fuerza la posición en `/portfolio` (menor = primero). Sin él: año más reciente primero |
+| `example` | no | `true` marca el proyecto como ejemplo (etiqueta visible + aviso en el build) |
 
-   Para etiquetar: seleccioná las imágenes en Media Library → **Add tag** →
-   escribí el slug de la categoría. Una imagen puede tener varios tags.
+El **texto alternativo (`alt`) es obligatorio** en cada imagen.
 
-Listo. La web toma esas imágenes, las entrega optimizadas (`f_auto`, `q_auto`)
-y las muestra en la grilla y el lightbox.
+### Fotografías
 
-### Notas
+- Formato recomendado: `.webp` (también se aceptan `.jpg`, `.png`, `.avif`).
+- Subí las fotos a buen tamaño (lado largo ~2400 px, calidad 80–85): Next.js
+  genera las versiones responsive y optimizadas. No hace falta achicarlas más.
+- Las dimensiones se leen solas de cada archivo; no hay que declararlas.
+- Cada foto del JSON debe existir en la carpeta, o el build falla.
 
-- Las imágenes se cachean 1 hora (`revalidate: 3600`). Tras subir fotos
-  nuevas, aparecen al revalidarse (o redeployando).
-- **Fallback:** si no hay variables configuradas, o si Cloudinary falla, la
-  web usa los placeholders locales de `public/portfolio/<categoria>/`.
-- Las categorías se editan en `lib/site.js`.
+### Videos de YouTube
+
+Subí el video a YouTube y pegá el link o el ID en `videos`:
+
+```json
+"videos": [
+  "https://youtu.be/XXXXXXXXXXX",
+  { "url": "https://www.youtube.com/watch?v=YYYYYYYYYYY", "title": "Making of" }
+]
+```
+
+El reproductor no carga YouTube hasta que la persona toca play. `title` es
+opcional (se usa como descripción accesible).
+
+### Categorías
+
+Se editan en `content/portfolio/categorias.json` (`slug`, `title`, `blurb`).
+El filtro de `/portfolio` muestra solo las categorías que tienen proyectos.
+La carpeta de fotos usa el slug de la categoría.
+
+### Errores a propósito
+
+El sitio **no inventa contenido**. Si un JSON tiene un campo mal escrito, una
+categoría inexistente, una foto que no existe, un `alt` vacío o un ID de
+YouTube inválido, `npm run dev` / `npm run build` fallan indicando el archivo y
+el problema. Los proyectos con `"example": true` generan un aviso en el build y
+muestran la etiqueta "Ejemplo": borralos (JSON + carpeta de fotos) antes de
+lanzar.
 
 ---
 
@@ -114,23 +166,29 @@ playsInline>` para usar video.
 
 ```
 app/
-  page.jsx               Home (portada fullscreen)
-  portfolio/page.jsx     Portfolio (filtros + lightbox) — async, lee Cloudinary
-  servicios/page.jsx     Servicios
-  webs-rebrandings/...    Webs y rebrandings
-  sobre/page.jsx         Sobre Stroka
-  contacto/page.jsx      Contacto
+  page.jsx                 Home (portada fullscreen)
+  portfolio/page.jsx       Portfolio: tarjetas de proyectos + filtros
+  portfolio/[slug]/page.jsx  Página de un proyecto (se genera de content/)
+  servicios/ webs-rebrandings/ sobre/ contacto/
 components/
-  Navbar, Footer, Logo   Logo reemplazable por archivo
-  Hero                   Portada con crossfade
-  Gallery                Grilla masonry + filtros + lightbox
-  PageHeader, Reveal
+  Navbar, Footer, Logo, Hero, PageHeader, Reveal, ContactForm
+  Lightbox.jsx             Visor de fotos accesible (<dialog>)
+  YouTubeEmbed.jsx         Reproductor YouTube con carga diferida
+  portfolio/               ProjectCard, ProjectGrid, PhotoSequence
+content/portfolio/         Datos del portfolio (categorías y proyectos)
 lib/
-  site.js                Marca, logo, contacto, categorías
-  portfolio.js           Cloudinary (server) + fallback local
+  site.js                  Marca, logo, contacto
+  portfolio.js             Lee y valida content/ (solo servidor)
 public/
-  logo-stroka.svg        ← reemplazá por tu logo
-  portfolio/<categoria>/ Placeholders locales (fallback)
+  hero/                    Imágenes de la portada
+  portfolio/<categoria>/<slug>/   Fotos de cada proyecto
+```
+
+## Verificaciones
+
+```bash
+npm run lint
+npm run build
 ```
 
 
