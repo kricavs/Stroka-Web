@@ -1,0 +1,24 @@
+{
+  "title": "Boston Consulting Group",
+  "client": "Boston Consulting Group",
+  "year": 2026,
+  "category": "eventos",
+  "services": ["Video"],
+  "description": "Cobertura y producción de contenido para BCG, durante su evento de recruiters.",
+  "cover": {
+    "file": "cover.jpg",
+    "alt": "Boston Consulting Group — evento de recruiters"
+  },
+  "hero": {
+    "file": "hero.jpg",
+    "alt": "Boston Consulting Group — evento de recruiters"
+  },
+  "featured": true,
+  "homeOrder": 2,
+  "videos": [
+    {
+      "url": "https://www.youtube.com/watch?v=L6u5SMuUwGU",
+      "title": "Boston Consulting Group — evento de recruiters"
+    }
+  ]
+}

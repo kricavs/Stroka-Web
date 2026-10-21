@@ -1,10 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  images: {
-    // Allow Cloudinary-delivered images through next/image.
-    remotePatterns: [{ protocol: "https", hostname: "res.cloudinary.com" }],
-  },
   experimental: {
     // Server-only database drivers must not be bundled.
     serverComponentsExternalPackages: ["pg", "@electric-sql/pglite"],
