@@ -153,12 +153,22 @@ lanzar.
 
 ---
 
-## 3. Imagen/slides de la portada (Home)
+## 3. Home administrable (Stroka Studio)
 
-La home es una portada fullscreen con un crossfade entre algunas imágenes.
-Se definen en `components/Hero.jsx` (array `slides`). Cambiá esas rutas por
-tus imágenes, o reemplazá el bloque por un `<video autoPlay muted loop
-playsInline>` para usar video.
+El home se arma desde **Studio → Sitio** (`/studio/sitio`): imagen del hero,
+proyectos de *Selected Work* (máx. 4, con orden), imagen específica de cada
+uno e imagen del bloque de contacto, con punto focal y zoom no destructivos.
+Estas imágenes son independientes de `cover` y `hero` de cada proyecto (que
+solo se usan como respaldo si no se configuró nada).
+
+Las imágenes se suben a **Vercel Blob** (`BLOB_READ_WRITE_TOKEN`, se crea al
+conectar un Blob store al proyecto) y se guardan en Neon (`site_images`,
+`site_home_slots`). Sin la variable el sitio funciona igual y Studio avisa que
+las subidas no están disponibles.
+
+Las **referencias** de clientes se envían en `/referencias`, entran como
+`pending` y se moderan en `/studio/referencias`. Solo las `published` aparecen
+en el home.
 
 ---
 
@@ -166,12 +176,13 @@ playsInline>` para usar video.
 
 ```
 app/
-  page.jsx                 Home (portada fullscreen)
+  page.jsx                 Home (contenido administrable desde Studio)
   portfolio/page.jsx       Portfolio: tarjetas de proyectos + filtros
   portfolio/[slug]/page.jsx  Página de un proyecto (se genera de content/)
   servicios/ webs-rebrandings/ sobre/ contacto/
 components/
-  Navbar, Footer, Logo, Hero, PageHeader, Reveal, ContactForm
+  Navbar, Footer, Logo, PageHeader, Reveal, ContactForm, ReferenceForm
+  home/                    Secciones del home (hero, work, servicios, referencias, contacto)
   Lightbox.jsx             Visor de fotos accesible (<dialog>)
   YouTubeEmbed.jsx         Reproductor YouTube con carga diferida
   portfolio/               ProjectCard, ProjectGrid, PhotoSequence
@@ -180,7 +191,7 @@ lib/
   site.js                  Marca, logo, contacto
   portfolio.js             Lee y valida content/ (solo servidor)
 public/
-  hero/                    Imágenes de la portada
+  hero/                    Imágenes de respaldo de la portada
   portfolio/<categoria>/<slug>/   Fotos de cada proyecto
 ```
 
