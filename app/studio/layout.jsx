@@ -2,6 +2,7 @@ import Link from "next/link";
 import "./studio.css";
 import { Logo } from "@/components/Logo";
 import { hasSession } from "@/lib/studio/server/auth";
+import { countPending } from "@/lib/studio/server/testimonials";
 import LogoutButton from "@/components/studio/LogoutButton";
 
 export const metadata = {
@@ -15,6 +16,12 @@ export const dynamic = "force-dynamic";
 
 export default async function StudioLayout({ children }) {
   const authed = await hasSession();
+  let pending = 0;
+  if (authed) {
+    try {
+      pending = await countPending();
+    } catch {}
+  }
   return (
     <div className="min-h-screen bg-ink text-bone">
       <header className="border-b border-edge">
@@ -27,6 +34,13 @@ export default async function StudioLayout({ children }) {
           {authed && (
             <nav className="flex items-center gap-5 sm:gap-6 text-[0.68rem] font-light uppercase tracking-wider2 text-ash">
               <Link href="/studio/presupuestos" className="hover:text-champagne">Presupuestos</Link>
+              <Link href="/studio/sitio" className="hover:text-champagne">Sitio</Link>
+              <Link href="/studio/referencias" className="hover:text-champagne">
+                Referencias
+                {pending > 0 && (
+                  <span className="ml-2 bg-champagne px-1.5 py-0.5 text-[0.6rem] font-semibold text-ink">{pending}</span>
+                )}
+              </Link>
               <LogoutButton />
             </nav>
           )}

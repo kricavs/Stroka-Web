@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  images: {
+    // Home images uploaded from Studio live in Vercel Blob.
+    remotePatterns: [{ protocol: "https", hostname: "*.public.blob.vercel-storage.com" }],
+  },
   experimental: {
     // Server-only database drivers must not be bundled.
     serverComponentsExternalPackages: ["pg", "@electric-sql/pglite"],

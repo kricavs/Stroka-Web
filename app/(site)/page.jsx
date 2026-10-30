@@ -1,15 +1,23 @@
-import Hero from "@/components/Hero";
-import { getFeaturedProjects } from "@/lib/portfolio";
+import { getHomeData } from "@/lib/home-data";
+import HomeHero from "@/components/home/HomeHero";
+import HomeWork from "@/components/home/HomeWork";
+import HomeServices from "@/components/home/HomeServices";
+import HomeReferences from "@/components/home/HomeReferences";
+import HomeContact from "@/components/home/HomeContact";
 
-export default function Home() {
-  // Portfolio-cover home: image as protagonist, nav on top, minimal text.
-  // Slides come from the featured projects (content/portfolio/proyectos).
-  const slides = getFeaturedProjects().map((p) => ({
-    slug: p.slug,
-    title: p.title,
-    category: p.category.title,
-    year: p.year,
-    image: p.hero,
-  }));
-  return <Hero slides={slides} />;
+// Content comes from Studio (images, selected work, published references);
+// Studio saves call revalidatePath("/"), the interval is only a safety net.
+export const revalidate = 300;
+
+export default async function Home() {
+  const { hero, work, testimonials, contact } = await getHomeData();
+  return (
+    <>
+      <HomeHero image={hero} />
+      <HomeWork items={work} />
+      <HomeServices />
+      <HomeReferences items={testimonials} />
+      <HomeContact image={contact} />
+    </>
+  );
 }
