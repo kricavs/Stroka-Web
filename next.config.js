@@ -19,9 +19,17 @@ const nextConfig = {
       { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive, nosnippet" },
       { key: "Cache-Control", value: "private, no-store" },
     ];
+    // Client portal: per-client data, never cacheable or indexable.
+    const portalHeaders = [
+      ...privateHeaders,
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "X-Frame-Options", value: "DENY" },
+    ];
     return [
       { source: "/studio/:path*", headers: privateHeaders },
       { source: "/api/studio/:path*", headers: privateHeaders },
+      { source: "/portal/:path*", headers: portalHeaders },
+      { source: "/api/portal/:path*", headers: portalHeaders },
     ];
   },
 };

@@ -1,1 +1,56 @@
-{"extends":"next/core-web-vitals"}
+{
+  "extends": "next/core-web-vitals",
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "@/lib/portal/scope-core.js",
+            "importNames": ["mintScope"],
+            "message": "mintScope solo puede usarse donde se verifica el origen de la sesión (lib/portal/server/scope.js, lib/studio/server/viewAsClient.js)."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["lib/portal/**/*.js", "app/portal/**/*.{js,jsx}", "app/api/portal/**/*.js", "components/portal/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@/lib/portal/scope-core.js",
+                "importNames": ["mintScope"],
+                "message": "mintScope solo puede usarse donde se verifica el origen de la sesión (lib/portal/server/scope.js, lib/studio/server/viewAsClient.js)."
+              }
+            ],
+            "patterns": [
+              {
+                "group": [
+                  "**/studio/server/*",
+                  "!**/studio/server/db",
+                  "!**/studio/server/db.js",
+                  "!**/studio/server/rateLimit",
+                  "!**/studio/server/rateLimit.js"
+                ],
+                "message": "El portal no puede importar módulos de datos de Studio (solo db y rateLimit). Usá repositorios en lib/portal/server."
+              },
+              {
+                "group": ["**/components/studio/*"],
+                "message": "El portal no reutiliza componentes de Studio: ni controles ni estilos admin."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["lib/portal/server/scope.js", "lib/studio/server/viewAsClient.js", "tests/**"],
+      "rules": { "no-restricted-imports": "off" }
+    }
+  ]
+}
