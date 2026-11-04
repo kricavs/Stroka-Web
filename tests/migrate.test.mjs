@@ -28,9 +28,11 @@ test("base existente (Production): se ADOPTA sin ejecutar nada ni tocar datos", 
   await db.query(`INSERT INTO testimonials (id, brand, person, comment, status) VALUES ('t1','Marca','Ana','Genial','published')`);
 
   // Si el baseline se ejecutara, esto delataría cualquier DDL: lo registramos.
+  // (schema_migrations es la única tabla nueva permitida: se excluye del conteo.)
   const ddl = [];
-  const spy = { ...db, query: async (sql, p) => (/CREATE|ALTER|DROP/i.test(sql) && !/schema_migrations/.test(sql) && ddl.push(sql), db.query(sql, p)),
-    tx: (fn) => db.tx((t) => fn({ query: async (sql, p) => (/CREATE|ALTER|DROP/i.test(sql) && ddl.push(sql), t.query(sql, p)) })) };
+  const watch = (sql) => /CREATE|ALTER|DROP/i.test(sql) && !/schema_migrations/.test(sql) && ddl.push(sql);
+  const spy = { ...db, query: async (sql, p) => (watch(sql), db.query(sql, p)),
+    tx: (fn) => db.tx((t) => fn({ query: async (sql, p) => (watch(sql), t.query(sql, p)) })) };
   const r = await runMigrations(spy, MIGRATIONS);
 
   assert.deepEqual(r.applied.map((a) => a.mode), ["adopted"]);
@@ -84,4 +86,30 @@ test("db.tx: commit, rollback y aislamiento", async () => {
   assert.deepEqual((await db.query(`SELECT n FROM acc ORDER BY id`)).map((r) => r.n), [10, 20]);
   const out = await db.tx(async (t) => (await t.query(`SELECT 7 AS x`))[0].x);
   assert.equal(out, 7);
+});
+
+test("regresión Neon: ningún DDL fuera del lock (CREATE IF NOT EXISTS no es seguro en concurrencia)", async () => {
+  // Con una sola conexión (PGlite) la carrera real no se puede reproducir, así
+  // que se verifica el ORDEN: dentro de la transacción, el advisory lock debe
+  // preceder a cualquier escritura, y fuera de la transacción no puede haber DDL.
+  const db = memoryDb();
+  const events = [];
+  let inTx = false;
+  const rec = (kind) => (sql) => events.push({ kind, inTx, sql: String(sql).replace(/\s+/g, " ").slice(0, 60) });
+  const spy = {
+    query: async (sql, p) => (rec("outer")(sql), db.query(sql, p)),
+    tx: (fn) => db.tx((t) => { inTx = true; return fn({ query: async (sql, p) => (rec("tx")(sql), t.query(sql, p)) }).finally(() => (inTx = false)); }),
+  };
+  await runMigrations(spy, MIGRATIONS);
+  const ddlOutside = events.filter((e) => !e.inTx && /\b(CREATE|ALTER|DROP|INSERT)\b/i.test(e.sql));
+  assert.deepEqual(ddlOutside, [], "no debe haber escrituras/DDL fuera de la transacción con lock");
+  const txEvents = events.filter((e) => e.inTx);
+  assert.match(txEvents[0].sql, /pg_advisory_xact_lock/, "lo primero dentro de la transacción es el lock");
+  assert.ok(txEvents.findIndex((e) => /CREATE TABLE IF NOT EXISTS schema_migrations/.test(e.sql)) > 0, "schema_migrations se crea después del lock");
+
+  // Camino rápido: con todo aplicado no hay transacción ni escrituras.
+  events.length = 0;
+  await runMigrations(spy, MIGRATIONS);
+  assert.equal(events.filter((e) => e.inTx).length, 0, "sin pendientes: no abre transacción");
+  assert.equal(events.filter((e) => /CREATE|INSERT|ALTER/i.test(e.sql)).length, 0);
 });
