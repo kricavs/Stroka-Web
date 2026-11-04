@@ -24,7 +24,8 @@ test("getDb() real: migra una base nueva y reabre sin reaplicar", () => {
     assert.equal(a.status, 0, a.stderr);
     assert.match(a.stdout, /baseline-studio-schema\): applied/);
     const out1 = JSON.parse(a.stdout.trim().split("\n").pop());
-    assert.deepEqual(out1.m, [{ id: 1, mode: "applied" }]);
+    assert.deepEqual(out1.m, [{ id: 1, mode: "applied" }, { id: 2, mode: "applied" }]);
+    assert.match(a.stdout, /portal-phase1-clients-content\): applied/);
     assert.equal(out1.t, 1);
     const b = run();
     assert.equal(b.status, 0, b.stderr);

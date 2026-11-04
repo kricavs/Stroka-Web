@@ -18,7 +18,7 @@ export default function LoginForm() {
       body: JSON.stringify({ user: f.get("user"), password: f.get("password") }),
     });
     if (res.ok) {
-      window.location.href = "/studio/presupuestos";
+      window.location.href = "/studio";
       return;
     }
     const data = await res.json().catch(() => ({}));
