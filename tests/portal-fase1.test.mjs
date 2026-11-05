@@ -42,7 +42,7 @@ test("migración 2: tablas, FK compuesta y reaplicación idempotente", async () 
   for (const n of ["clients", "client_sessions", "client_month_goals", "content_items", "activity_log"]) assert.ok(names.includes(n), n);
   assert.deepEqual((await runMigrations(db, MIGRATIONS)).applied, []);
   const ids = (await db.query(`SELECT id FROM schema_migrations ORDER BY id`)).map((r) => r.id);
-  assert.deepEqual(ids, [1, 2]);
+  assert.deepEqual(ids, [1, 2, 3]);
   // composite FK: activity cannot point at another client's content
   const a = await clients.createClient(db, { name: "A" });
   const b = await clients.createClient(db, { name: "B" });
@@ -173,7 +173,7 @@ test("activity log: eventos sin secretos", async () => {
   await content.changeStatus(db, cid, "idea" === "idea" ? "production" : "x");
   await content.changeStatus(db, cid, "review");
   await content.changeStatus(db, cid, "client_review");
-  await content.changeStatus(db, cid, "approved");
+  await content.registerExternalApproval(db, cid, { approverName: "Ana Pérez" });
   await content.changeStatus(db, cid, "published");
   const ev = (await db.query(`SELECT event FROM activity_log ORDER BY seq`)).map((r) => r.event);
   for (const e of ["client.created", "access.generated", "login.success", "client.deactivated", "content.created",
@@ -190,7 +190,8 @@ test("máquina de estados y efectos", async () => {
   await content.changeStatus(db, cid, "review");
   await content.changeStatus(db, cid, "client_review");
   assert.ok((await content.getContent(db, cid)).sentToClientAt);
-  await content.changeStatus(db, cid, "changes_requested");
+  await assert.rejects(content.changeStatus(db, cid, "changes_requested"), /registra el cliente/);
+  await assert.rejects(content.changeStatus(db, cid, "approved"), /registra el cliente/);
   await content.changeStatus(db, cid, "production");
   await content.changeStatus(db, cid, "cancelled");
   await content.changeStatus(db, cid, "idea");
@@ -221,7 +222,7 @@ test("visibilidad por estado + DTO sin campos internos", async () => {
   const prod = list.find((c) => c.status === "production");
   assert.deepEqual(Object.keys(prod).sort(), ["id", "minimal", "scheduledAt", "status", "statusLabel", "title"]);
   const whole = JSON.stringify(list);
-  assert.ok(!whole.includes("INTERNA") && !whole.includes("Ana") && !/internal|assignee|version/i.test(whole));
+  assert.ok(!whole.includes("INTERNA") && !whole.includes("Ana") && !/internal|assignee|sent_to_client/i.test(whole));
   for (const s of ["idea", "review", "cancelled"]) assert.equal(await repo.getVisible(scope, ids[s]), null, s);
   assert.equal((await repo.getVisible(scope, ids.client_review)).copy, "COPY-SECRETO?");
   assert.equal((await repo.getVisible(scope, ids.production)).copy, undefined);

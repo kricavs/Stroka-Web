@@ -3,6 +3,7 @@ import PageHead from "@/components/studio/PageHead";
 import { requireSession } from "@/lib/studio/server/auth";
 import { listClients } from "@/lib/studio/server/clients";
 import { dashboardData } from "@/lib/studio/server/content";
+import { listTasks, taskCounts } from "@/lib/studio/server/tasks";
 import { PLATFORM_LABEL, STATUS_COLOR, STATUS_LABEL } from "@/lib/shared/content.js";
 import { addDays, dayRange, formatDayShort, formatSlot, monthKey, monthRange, ymd, zonedParts } from "@/lib/shared/time.js";
 
@@ -37,18 +38,32 @@ function Row({ it, withDate }) {
   );
 }
 
+function TaskRow({ t }) {
+  return (
+    <li>
+      <Link href={`/studio/tareas/${t.id}`} className="flex items-center gap-3 py-2 text-sm font-light hover:text-champagne">
+        <span className="min-w-0 flex-1 truncate">{t.client_name ? `${t.client_name} · ` : ""}{t.title}</span>
+        <span className="shrink-0 text-xs text-ash">{t.due ? formatDayShort(new Date(`${t.due}T15:00:00Z`)) : ""}</span>
+      </Link>
+    </li>
+  );
+}
+
 export default async function StudioHome() {
   await requireSession();
   const now = new Date();
   const today = ymd(now);
   const month = monthKey(now);
   const mr = monthRange(month);
-  const [data, clients] = await Promise.all([
+  const [data, clients, counts, lateTasks, todayTasks] = await Promise.all([
     dashboardData({
       today: dayRange(today),
       upcoming: { start: dayRange(addDays(today, 1)).start, end: dayRange(addDays(today, 8)).start },
     }),
     listClients({ month, monthStart: mr.start, monthEnd: mr.end, now }),
+    taskCounts(today),
+    listTasks({ overdue: true, today, limit: 8 }),
+    listTasks({ dueToday: true, today, limit: 8 }),
   ]);
   const active = clients.filter((c) => c.active);
   const none = (t) => <p className="text-sm font-light text-ash">{t}</p>;
@@ -63,8 +78,17 @@ export default async function StudioHome() {
         <Block title="Publicaciones de hoy" count={data.todayItems.length} empty={data.todayItems.length ? null : none("Nada programado para hoy.")}>
           <ul className="divide-y divide-edge">{data.todayItems.map((it) => <Row key={it.id} it={it} />)}</ul>
         </Block>
-        <Block title="En revisión del cliente" count={data.review.length} empty={data.review.length ? null : none("Nada esperando al cliente.")}>
+        <Block title="Esperando aprobación" count={data.review.length} empty={data.review.length ? null : none("Nada esperando al cliente.")}>
           <ul className="divide-y divide-edge">{data.review.map((it) => <Row key={it.id} it={it} withDate />)}</ul>
+        </Block>
+        <Block title="Cambios solicitados" count={data.changes.length} empty={data.changes.length ? null : none("Ningún cliente pidió cambios.")}>
+          <ul className="divide-y divide-edge">{data.changes.map((it) => <Row key={it.id} it={it} withDate />)}</ul>
+        </Block>
+        <Block title="Tareas vencidas" count={counts.overdue} empty={lateTasks.length ? null : none("Sin tareas vencidas.")}>
+          <ul className="divide-y divide-edge">{lateTasks.map((t) => <TaskRow key={t.id} t={t} />)}</ul>
+        </Block>
+        <Block title="Tareas para hoy" count={counts.due_today} empty={todayTasks.length ? null : none("Nada con vencimiento hoy.")}>
+          <ul className="divide-y divide-edge">{todayTasks.map((t) => <TaskRow key={t.id} t={t} />)}</ul>
         </Block>
         <Block title="Próximos 7 días" count={data.upcomingItems.length} empty={data.upcomingItems.length ? null : none("Sin publicaciones próximas.")}>
           <ul className="divide-y divide-edge">{data.upcomingItems.map((it) => <Row key={it.id} it={it} withDate />)}</ul>

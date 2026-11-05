@@ -5,6 +5,8 @@ import CalendarView from "@/components/studio/CalendarView";
 import ClientForm from "@/components/studio/ClientForm";
 import GoalForm from "@/components/studio/GoalForm";
 import PageHead from "@/components/studio/PageHead";
+import TaskTable from "@/components/studio/TaskTable";
+import { listTasks } from "@/lib/studio/server/tasks";
 import { requireSession } from "@/lib/studio/server/auth";
 import { getClient, listActivity } from "@/lib/studio/server/clients";
 import { clientMonthStats, listContent } from "@/lib/studio/server/content";
@@ -12,12 +14,13 @@ import { getDb } from "@/lib/studio/server/db";
 import { viewRange } from "@/lib/shared/calendar.js";
 import { calendarHref, parseCalendarParams } from "@/lib/studio/calendar-params.js";
 import { EVENT_LABEL, PLATFORM_LABEL, STATUS_COLOR, STATUS_LABEL, SUMMARY_BUCKETS, progressPct } from "@/lib/shared/content.js";
-import { formatMonthLong, formatSlot, formatStamp, monthKey, monthRange } from "@/lib/shared/time.js";
+import { formatMonthLong, formatSlot, formatStamp, monthKey, monthRange, ymd } from "@/lib/shared/time.js";
 
 const TABS = [
   ["resumen", "Resumen"],
   ["calendario", "Calendario"],
   ["contenidos", "Contenidos"],
+  ["tareas", "Tareas"],
   ["acceso", "Acceso"],
   ["actividad", "Actividad"],
 ];
@@ -46,6 +49,7 @@ export default async function ClientPage({ params, searchParams }) {
       {tab === "resumen" && <ResumenTab client={client} />}
       {tab === "calendario" && <CalendarioTab client={client} base={base} searchParams={searchParams} />}
       {tab === "contenidos" && <ContenidosTab client={client} />}
+      {tab === "tareas" && <TareasTab client={client} />}
       {tab === "acceso" && <AccessPanel client={JSON.parse(JSON.stringify(client))} justCreated={searchParams.nuevo === "1"} />}
       {tab === "actividad" && <ActividadTab client={client} />}
     </>
@@ -130,12 +134,42 @@ async function ContenidosTab({ client }) {
   );
 }
 
+async function TareasTab({ client }) {
+  const today = ymd(new Date());
+  const tasks = await listTasks({ clientId: client.id, today });
+  const groups = [
+    ["Vencidas", (t) => ["pending", "in_progress"].includes(t.status) && t.due && t.due < today],
+    ["Para el cliente", (t) => ["pending", "in_progress"].includes(t.status) && t.visibility === "client" && !(t.due && t.due < today)],
+    ["Internas", (t) => ["pending", "in_progress"].includes(t.status) && t.visibility === "internal" && !(t.due && t.due < today)],
+    ["Completadas y canceladas", (t) => !["pending", "in_progress"].includes(t.status)],
+  ];
+  return (
+    <div className="space-y-10">
+      <Link href={`/studio/tareas/nueva?client=${client.id}`} className="inline-block border border-[#55524d] px-4 py-2.5 text-[0.68rem] uppercase tracking-wider2 hover:border-champagne hover:text-champagne">Nueva tarea</Link>
+      {tasks.length === 0 && <p className="text-sm font-light text-ash">Este cliente no tiene tareas.</p>}
+      {groups.map(([title, fn]) => {
+        const list = tasks.filter(fn);
+        return list.length ? (
+          <section key={title}>
+            <h2 className="mb-4 text-[0.64rem] font-semibold uppercase tracking-[0.3em] text-champagne">{title} · {list.length}</h2>
+            <TaskTable tasks={list} today={today} showClient={false} />
+          </section>
+        ) : null;
+      })}
+    </div>
+  );
+}
+
 function describe(a) {
   const d = a.data || {};
   if (a.event === "content.status_changed") return `${STATUS_LABEL[d.from] || d.from} → ${STATUS_LABEL[d.to] || d.to}`;
   if (a.event === "content.rescheduled") return `${d.from ? formatSlot(new Date(d.from)) : "sin fecha"} → ${d.to ? formatSlot(new Date(d.to)) : "sin fecha"}`;
   if (a.event === "access.regenerated") return d.sessionsRevoked ? `sesiones cerradas: ${d.count}` : "sesiones mantenidas";
   if (a.event === "sessions.revoked") return `${d.count} sesiones`;
+  if (["content.approved", "content.changes_requested", "content.sent_for_review"].includes(a.event)) return `v${d.version}`;
+  if (a.event === "content.manual_approval") return `${d.approverName} · ${d.channel}`;
+  if (a.event === "content.approval_invalidated") return `v${d.fromVersion} → v${d.toVersion}`;
+  if (a.event.startsWith("task.")) return d.title || "";
   if (a.event === "goal.set") return `${d.month}: ${d.contracted}`;
   return "";
 }

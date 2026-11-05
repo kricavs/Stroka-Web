@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "./ui";
 import { api } from "./api";
-import { STATUS_LABEL, TRANSITIONS } from "@/lib/shared/content.js";
+import { STATUS_LABEL, STUDIO_TRANSITIONS } from "@/lib/shared/content.js";
 
 export default function StatusActions({ id, status }) {
   const router = useRouter();
@@ -19,7 +19,7 @@ export default function StatusActions({ id, status }) {
     if (!r.ok) return setError(r.data.error || "No se pudo cambiar el estado.");
     router.refresh();
   }
-  const next = TRANSITIONS[status] || [];
+  const next = STUDIO_TRANSITIONS[status] || [];
   return (
     <div>
       <div className="flex flex-wrap gap-2">

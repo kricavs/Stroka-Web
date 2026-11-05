@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getProfile } from "@/lib/portal/server/content";
 import Calendario from "./Calendario";
 import Contenido from "./Contenido";
+import Pendientes from "./Pendientes";
 import Placeholder from "./Placeholder";
 import PortalShell from "./PortalShell";
 import Resumen from "./Resumen";
@@ -23,12 +24,11 @@ export default async function renderPortal({ scope, base, slug = ["resumen"], se
   if (section === "resumen") body = <Resumen scope={scope} base={base} />;
   else if (section === "calendario") body = <Calendario scope={scope} base={base} searchParams={searchParams} />;
   else if (section === "contenido") body = <Contenido scope={scope} base={base} id={arg} />;
-  else if (section === "pendientes")
-    body = <Placeholder eyebrow="Pendientes" title="Pendientes" text="Muy pronto vas a ver acá lo que necesita tu atención: aprobaciones y tareas." />;
+  else if (section === "pendientes") body = <Pendientes scope={scope} base={base} />;
   else body = <Placeholder eyebrow="Archivos" title="Archivos" text="Muy pronto vas a encontrar acá los archivos de tu proyecto." />;
 
   return (
-    <PortalShell profile={profile} base={base} preview={preview}>
+    <PortalShell profile={profile} base={base} preview={preview} identity={{ name: scope.displayName }}>
       {body}
     </PortalShell>
   );
