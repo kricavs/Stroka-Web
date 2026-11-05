@@ -1,0 +1,7 @@
+/* Client portal: same heavy title face as Studio/PDF. */
+@font-face {
+  font-family: "StrokaTitle";
+  src: url("/studio-fonts/anton-latin-400-normal.woff") format("woff");
+  font-weight: 400;
+  font-display: swap;
+}

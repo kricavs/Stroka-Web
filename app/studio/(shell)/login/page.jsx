@@ -3,7 +3,7 @@ import { hasSession } from "@/lib/studio/server/auth";
 import LoginForm from "@/components/studio/LoginForm";
 
 export default async function LoginPage() {
-  if (await hasSession()) redirect("/studio/presupuestos");
+  if (await hasSession()) redirect("/studio");
   return (
     <div className="mx-auto mt-12 max-w-sm">
       <p className="text-[0.7rem] font-light uppercase tracking-[0.3em] text-champagne">Acceso privado</p>
