@@ -1,15 +1,16 @@
 import Link from "next/link";
 import { formatMonthLong, formatSlot, monthKey } from "@/lib/shared/time.js";
-import { getProfile, monthSummary, nextPublication } from "@/lib/portal/server/content";
+import { getProfile, monthSummary, nextPublication, pendingCounts } from "@/lib/portal/server/content";
 import { Eyebrow, StatusPill, Title, card } from "./ui";
 
 export default async function Resumen({ scope, base }) {
   const now = new Date();
   const month = monthKey(now);
   const profile = await getProfile(scope);
-  const [summary, next] = await Promise.all([
+  const [summary, next, pending] = await Promise.all([
     monthSummary(scope, month, profile.defaultMonthly),
     nextPublication(scope, now),
+    pendingCounts(scope),
   ]);
   const [monthName] = formatMonthLong(month).split(" ");
 
@@ -51,6 +52,23 @@ export default async function Resumen({ scope, base }) {
             </div>
             <p className="mt-2 text-xs font-light text-[#9a9aa3]">{summary.progress}% completado</p>
           </div>
+        )}
+      </section>
+
+      <section className={`${card} mt-5 p-6 sm:p-8`}>
+        <p className="text-[0.62rem] uppercase tracking-wider2 text-[#9a9aa3]">Pendientes</p>
+        {pending.review + pending.tasks > 0 ? (
+          <>
+            <ul className="mt-3 space-y-1 text-sm font-light">
+              {pending.review > 0 && <li>{pending.review} {pending.review === 1 ? "contenido para revisar" : "contenidos para revisar"}</li>}
+              {pending.tasks > 0 && <li>{pending.tasks} {pending.tasks === 1 ? "tarea pendiente" : "tareas pendientes"}</li>}
+            </ul>
+            <Link href={`${base}/pendientes`} className="mt-4 inline-flex min-h-[44px] items-center text-[0.7rem] font-semibold uppercase tracking-wider2 text-[var(--accent)] hover:text-[#f4f4f2]">
+              Ver pendientes →
+            </Link>
+          </>
+        ) : (
+          <p className="mt-3 text-sm font-light text-[#9a9aa3]">No tenés nada pendiente.</p>
         )}
       </section>
 

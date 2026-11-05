@@ -12,7 +12,7 @@ const GROUPS = [
       { href: "/studio", label: "Hoy", exact: true },
       { href: "/studio/clientes", label: "Clientes" },
       { href: "/studio/calendario", label: "Calendario" },
-      { label: "Tareas", soon: true },
+      { href: "/studio/tareas", label: "Tareas" },
     ],
   },
   {

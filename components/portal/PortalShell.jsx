@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
+import ChangeName from "./ChangeName";
 import PortalLogout from "./PortalLogout";
 import PortalNav from "./PortalNav";
 
 // Shared frame for the real portal and for Studio's "ver como cliente".
 // `preview` = admin-preview scope: loud banner, no logout, nothing writable.
-export default function PortalShell({ profile, base, preview, children }) {
+export default function PortalShell({ profile, base, preview, identity, children }) {
   return (
     <div style={{ "--accent": profile.accent || "#b9a388" }}>
       {preview && (
@@ -29,6 +30,11 @@ export default function PortalShell({ profile, base, preview, children }) {
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-5 py-8 sm:py-10">{children}</main>
+      {!preview && (
+        <footer className="mx-auto max-w-5xl px-5 pb-28 md:pb-10">
+          <ChangeName name={identity?.name || null} />
+        </footer>
+      )}
     </div>
   );
 }
