@@ -5,7 +5,10 @@ import CalendarView from "@/components/studio/CalendarView";
 import ClientForm from "@/components/studio/ClientForm";
 import GoalForm from "@/components/studio/GoalForm";
 import PageHead from "@/components/studio/PageHead";
+import FilesAdmin from "@/components/studio/FilesAdmin";
 import TaskTable from "@/components/studio/TaskTable";
+import { filesMode } from "@/lib/files/server/storage";
+import { listClientFiles } from "@/lib/studio/server/files";
 import { listTasks } from "@/lib/studio/server/tasks";
 import { requireSession } from "@/lib/studio/server/auth";
 import { getClient, listActivity } from "@/lib/studio/server/clients";
@@ -21,8 +24,9 @@ const TABS = [
   ["calendario", "Calendario"],
   ["contenidos", "Contenidos"],
   ["tareas", "Tareas"],
-  ["acceso", "Acceso"],
+  ["archivos", "Archivos"],
   ["actividad", "Actividad"],
+  ["acceso", "Acceso"],
 ];
 
 export default async function ClientPage({ params, searchParams }) {
@@ -50,6 +54,7 @@ export default async function ClientPage({ params, searchParams }) {
       {tab === "calendario" && <CalendarioTab client={client} base={base} searchParams={searchParams} />}
       {tab === "contenidos" && <ContenidosTab client={client} />}
       {tab === "tareas" && <TareasTab client={client} />}
+      {tab === "archivos" && <ArchivosTab client={client} />}
       {tab === "acceso" && <AccessPanel client={JSON.parse(JSON.stringify(client))} justCreated={searchParams.nuevo === "1"} />}
       {tab === "actividad" && <ActividadTab client={client} />}
     </>
@@ -134,6 +139,18 @@ async function ContenidosTab({ client }) {
   );
 }
 
+async function ArchivosTab({ client }) {
+  const [files, contents] = await Promise.all([listClientFiles(client.id), listContent({ clientId: client.id, limit: 200 })]);
+  return (
+    <FilesAdmin
+      clientId={client.id}
+      files={JSON.parse(JSON.stringify(files))}
+      contents={contents.map((c) => ({ id: c.id, title: c.title }))}
+      enabled={Boolean(filesMode())}
+    />
+  );
+}
+
 async function TareasTab({ client }) {
   const today = ymd(new Date());
   const tasks = await listTasks({ clientId: client.id, today });
@@ -170,6 +187,7 @@ function describe(a) {
   if (a.event === "content.manual_approval") return `${d.approverName} · ${d.channel}`;
   if (a.event === "content.approval_invalidated") return `v${d.fromVersion} → v${d.toVersion}`;
   if (a.event.startsWith("task.")) return d.title || "";
+  if (a.event.startsWith("file.")) return `${d.name || ""}${d.version ? ` · v${d.version}` : ""}`;
   if (a.event === "goal.set") return `${d.month}: ${d.contracted}`;
   return "";
 }

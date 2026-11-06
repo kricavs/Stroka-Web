@@ -42,7 +42,7 @@ test("migración 2: tablas, FK compuesta y reaplicación idempotente", async () 
   for (const n of ["clients", "client_sessions", "client_month_goals", "content_items", "activity_log"]) assert.ok(names.includes(n), n);
   assert.deepEqual((await runMigrations(db, MIGRATIONS)).applied, []);
   const ids = (await db.query(`SELECT id FROM schema_migrations ORDER BY id`)).map((r) => r.id);
-  assert.deepEqual(ids, [1, 2, 3]);
+  assert.deepEqual(ids, MIGRATIONS.map((m) => m.id));
   // composite FK: activity cannot point at another client's content
   const a = await clients.createClient(db, { name: "A" });
   const b = await clients.createClient(db, { name: "B" });

@@ -3,19 +3,23 @@ import { notFound } from "next/navigation";
 import { formatSlot, formatStamp } from "@/lib/shared/time.js";
 import { currentApproval, getVisible, listComments } from "@/lib/portal/server/content";
 import { isHttpUrl } from "@/lib/shared/content.js";
+import { groupFiles } from "@/lib/portal/files-core.js";
+import { listForContent } from "@/lib/portal/server/files";
 import CommentForm from "./CommentForm";
+import { FileGroup } from "./FileList";
 import ReviewActions from "./ReviewActions";
 import { Eyebrow, StatusPill, Title, card } from "./ui";
 
-export default async function Contenido({ scope, base, id }) {
+export default async function Contenido({ scope, base, id, fileHref }) {
   const item = await getVisible(scope, id);
   if (!item) notFound(); // same 404 for missing / someone else's / not visible
   const canAct = scope.source === "session";
   const hasName = Boolean(scope.displayName);
   const showApproval = ["approved", "scheduled", "published"].includes(item.status);
-  const [approval, comments] = item.minimal
-    ? [null, []]
-    : await Promise.all([showApproval ? currentApproval(scope, item.id, item.version) : null, listComments(scope, item.id)]);
+  const [approval, comments, files] = item.minimal
+    ? [null, [], []]
+    : await Promise.all([showApproval ? currentApproval(scope, item.id, item.version) : null, listComments(scope, item.id), listForContent(scope, item.id)]);
+  const fileGroups = groupFiles(files).flatMap((s) => s.groups);
 
   return (
     <>
@@ -70,6 +74,12 @@ export default async function Contenido({ scope, base, id }) {
             <a href={item.publishedUrl} target="_blank" rel="noopener noreferrer" className="inline-block text-[0.7rem] uppercase tracking-wider2 text-[var(--accent)] hover:text-[#f4f4f2]">
               Ver publicación ↗
             </a>
+          )}
+          {fileGroups.length > 0 && (
+            <section aria-label="Archivos">
+              <h2 className="mb-4 text-[0.62rem] uppercase tracking-wider2 text-[#9a9aa3]">Archivos</h2>
+              <ul className="space-y-3">{fileGroups.map((g) => <FileGroup key={g.key} group={g} fileHref={fileHref} />)}</ul>
+            </section>
           )}
           <section className="pt-4" aria-label="Comentarios">
             <h2 className="mb-4 text-[0.62rem] uppercase tracking-wider2 text-[#9a9aa3]">Comentarios</h2>
