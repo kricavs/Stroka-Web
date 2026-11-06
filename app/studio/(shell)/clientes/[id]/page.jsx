@@ -12,12 +12,14 @@ import { listClientFiles } from "@/lib/studio/server/files";
 import { listTasks } from "@/lib/studio/server/tasks";
 import { requireSession } from "@/lib/studio/server/auth";
 import { getClient, listActivity } from "@/lib/studio/server/clients";
-import { clientMonthStats, listContent } from "@/lib/studio/server/content";
+import ClientOpsHeader from "@/components/studio/ops/ClientOpsHeader";
+import { listContent } from "@/lib/studio/server/content";
+import { getOperations } from "@/lib/studio/server/operations";
 import { getDb } from "@/lib/studio/server/db";
 import { viewRange } from "@/lib/shared/calendar.js";
 import { calendarHref, parseCalendarParams } from "@/lib/studio/calendar-params.js";
-import { EVENT_LABEL, PLATFORM_LABEL, STATUS_COLOR, STATUS_LABEL, SUMMARY_BUCKETS, progressPct } from "@/lib/shared/content.js";
-import { formatMonthLong, formatSlot, formatStamp, monthKey, monthRange, ymd } from "@/lib/shared/time.js";
+import { EVENT_LABEL, PLATFORM_LABEL, STATUS_COLOR, STATUS_LABEL } from "@/lib/shared/content.js";
+import { formatSlot, formatStamp, monthKey, ymd } from "@/lib/shared/time.js";
 
 const TABS = [
   ["resumen", "Resumen"],
@@ -62,29 +64,25 @@ export default async function ClientPage({ params, searchParams }) {
 }
 
 async function ResumenTab({ client }) {
-  const month = monthKey(new Date());
-  const stats = await clientMonthStats(client.id, monthRange(month));
+  const now = new Date();
+  const month = monthKey(now);
   const db = await getDb();
-  const [goal] = await db.query(`SELECT contracted FROM client_month_goals WHERE client_id = $1 AND month = $2`, [client.id, month]);
+  // Operational state (inactive clients are not tracked: no row).
+  const [ops, [goal]] = await Promise.all([
+    getOperations({ now, clientId: client.id }),
+    db.query(`SELECT contracted FROM client_month_goals WHERE client_id = $1 AND month = $2`, [client.id, month]),
+  ]);
+  const row = ops.clients[0];
   const contracted = goal ? goal.contracted : client.settings?.defaultMonthly || 0;
-  const sum = (l) => l.reduce((n, s) => n + (stats[s] || 0), 0);
-  const published = sum(SUMMARY_BUCKETS.published);
-  const pct = progressPct(published, contracted);
   return (
     <div className="grid gap-10 xl:grid-cols-2">
-      <section>
-        <h2 className="mb-4 text-[0.64rem] font-semibold uppercase tracking-[0.3em] text-champagne">{formatMonthLong(month)}</h2>
-        <dl className="grid grid-cols-3 gap-4 sm:grid-cols-5">
-          {[["Idea", stats.idea || 0], ["Producción", sum(["production", "review"])], ["Con cliente", sum(SUMMARY_BUCKETS.review)], ["Programado", sum(SUMMARY_BUCKETS.scheduled)], ["Publicado", published]].map(([l, n]) => (
-            <div key={l} className="border-t border-edge pt-3"><dd className="font-title text-4xl leading-none">{n}</dd><dt className="mt-2 text-[0.58rem] uppercase tracking-wider2 text-ash">{l}</dt></div>
-          ))}
-        </dl>
-        {pct !== null && <p className="mt-5 text-sm font-light text-ash">{pct}% completado ({published} de {contracted})</p>}
-        <div className="mt-6">
+      <div>
+        {row ? <ClientOpsHeader row={row} now={now} /> : <p className="text-sm font-light text-ash">Cliente inactivo: no entra en el seguimiento operativo.</p>}
+        <div className="mt-8">
           <p className="mb-2 text-[0.6rem] uppercase tracking-wider2 text-ash">Contratados este mes</p>
           <GoalForm key={`${month}-${contracted}`} clientId={client.id} month={month} contracted={contracted} />
         </div>
-      </section>
+      </div>
       <section>
         <h2 className="mb-4 text-[0.64rem] font-semibold uppercase tracking-[0.3em] text-champagne">Datos del cliente</h2>
         <ClientForm initial={JSON.parse(JSON.stringify(client))} />
