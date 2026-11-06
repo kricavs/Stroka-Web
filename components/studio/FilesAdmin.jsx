@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Button } from "./ui";
 import { api } from "./api";
 import FileUploader from "./FileUploader";
-import { CATEGORY_LABEL, formatBytes } from "@/lib/files/rules.js";
+import { CATEGORY_LABEL, formatBytes, uploaderKey } from "@/lib/files/rules.js";
 import { formatDayShort } from "@/lib/shared/time.js";
 
 const KIND = { image: "Imagen", pdf: "PDF", archive: "ZIP" };
@@ -62,11 +62,15 @@ export default function FilesAdmin({ clientId, files, contents, enabled }) {
   }
   return (
     <div className="space-y-6">
-      {versionOf ? (
-        <FileUploader clientId={clientId} contents={contents} base={{ id: versionOf.id, name: versionOf.name, category: versionOf.category, contentId: versionOf.content_id }} onDone={() => setVersionOf(null)} />
-      ) : (
-        <FileUploader clientId={clientId} contents={contents} />
-      )}
+      {/* The key remounts the uploader per target: its `open` state is only read on mount,
+          so without it "Nueva versión" reused the closed "Subir archivo" instance and did nothing visible. */}
+      <FileUploader
+        key={uploaderKey(versionOf)}
+        clientId={clientId}
+        contents={contents}
+        base={versionOf ? { id: versionOf.id, name: versionOf.name, category: versionOf.category, contentId: versionOf.content_id } : undefined}
+        onDone={() => setVersionOf(null)}
+      />
       {ordered.length === 0 ? (
         <p className="text-sm font-light text-ash">Este cliente todavía no tiene archivos.</p>
       ) : (

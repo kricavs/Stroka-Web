@@ -469,3 +469,36 @@ test("mantenimiento: purgado y huérfanos confirman el borrado con exists() y no
   const ok = await files.purgeArchived(w.db, w.storage, { olderThanDays: 30, dryRun: false, confirm: 1 });
   assert.equal(ok.purged, 1);
 });
+
+test("nueva versión (regresión): V1 → V2 con el payload exacto que manda la UI", async () => {
+  const w = await setup();
+  const a = await w.mkClient("A");
+  const cid = await content.createContent(w.db, a.id, { title: "Video campaña", platform: "web", contentType: "post" });
+  const v1 = await upload(w, a.id, { category: "deliverables", filename: "campana.pdf", bytes: PDF, extra: { contentId: cid, clientVisible: false } });
+  const [base] = await w.db.query(`select * from client_files where id=$1`, [v1.id]);
+  // Lo que arma FileUploader para una nueva versión: category/contentId del base, newVersionOf, sin markFinal.
+  const p = await files.prepareUpload(w.db, { clientId: a.id, category: base.category, filename: "campana-v2.pdf", size: PDF.length, contentId: base.content_id }, { secret: SECRET });
+  await w.storage.put(p.pathname, PDF);
+  const v2 = await files.completeUpload(w.db, w.storage, {
+    pathname: p.pathname, intent: p.intent, clientId: a.id, category: base.category, name: base.name, originalName: "campana-v2.pdf",
+    contentId: base.content_id, newVersionOf: base.id, markFinal: false, clientVisible: true,
+  }, { secret: SECRET, log: () => {} });
+  assert.equal(v2.version, 2);
+  assert.equal(v2.groupKey, v1.groupKey);
+  const rows = await w.db.query(`select id, version, blob_pathname, content_id, category from client_files where group_key=$1 order by version desc`, [v1.groupKey]);
+  assert.deepEqual(rows.map((r) => r.version), [2, 1], "V2 primero");
+  assert.notEqual(rows[0].blob_pathname, rows[1].blob_pathname);
+  assert.ok(await w.storage.exists(rows[1].blob_pathname), "V1 sigue existiendo");
+  assert.ok(rows.every((r) => r.content_id === cid && r.category === "deliverables"));
+  await files.setFinal(w.db, v2.id);
+  assert.equal((await w.db.query(`select id from client_files where group_key=$1 and is_final`, [v1.groupKey])).length, 1);
+  const evs = (await w.db.query(`select event from activity_log where client_id=$1 order by created_at`, [a.id])).map((r) => r.event);
+  assert.ok(evs.includes("file.version_added") && evs.includes("file.marked_final"));
+});
+
+test("nueva versión (regresión UI): cada destino remonta el uploader", () => {
+  // FileUploader lee `open` solo al montar; sin una key distinta "Nueva versión" reutilizaba la instancia cerrada.
+  assert.equal(rules.uploaderKey(null), "new");
+  assert.notEqual(rules.uploaderKey({ id: "fil_a" }), rules.uploaderKey(null));
+  assert.notEqual(rules.uploaderKey({ id: "fil_a" }), rules.uploaderKey({ id: "fil_b" }));
+});

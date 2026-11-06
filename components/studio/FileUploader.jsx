@@ -2,7 +2,7 @@
 
 import { upload } from "@vercel/blob/client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Field, Input, Select, Textarea } from "./ui";
 import { api } from "./api";
 import { FILE_CATEGORIES, FILE_TYPES, MB } from "@/lib/files/rules.js";
@@ -18,6 +18,12 @@ export default function FileUploader({ clientId, contents, base, onDone }) {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(null);
   const [error, setError] = useState("");
+  const formRef = useRef(null);
+
+  // The form sits above a long list: bring it into view when opened for a new version.
+  useEffect(() => {
+    if (base) formRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [base?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function submit(e) {
     e.preventDefault();
@@ -31,7 +37,7 @@ export default function FileUploader({ clientId, contents, base, onDone }) {
     setProgress(0);
     try {
       const prep = await api("/api/studio/files/prepare", "POST", {
-        clientId, category, filename: file.name, size: file.size, contentId: f.get("contentId") || null,
+        clientId, category, filename: file.name, size: file.size, contentId: (base?.contentId ?? f.get("contentId")) || null,
       });
       if (!prep.ok) throw new Error(prep.data.error || "No se pudo preparar la subida.");
       const { pathname, intent, mode, contentType } = prep.data;
@@ -77,7 +83,7 @@ export default function FileUploader({ clientId, contents, base, onDone }) {
   if (!open) return <Button variant="solid" onClick={() => setOpen(true)}>Subir archivo</Button>;
 
   return (
-    <form onSubmit={submit} className="max-w-2xl space-y-4 border border-edge bg-panel p-5">
+    <form ref={formRef} onSubmit={submit} className="max-w-2xl space-y-4 border border-edge bg-panel p-5">
       <p className="text-[0.64rem] font-semibold uppercase tracking-[0.3em] text-champagne">{base ? `Nueva versión de “${base.name}”` : "Subir archivo"}</p>
       <Field label="Archivo" hint="JPG, PNG, WEBP, AVIF (hasta 25 MB) · PDF (50 MB) · ZIP (100 MB). Para videos pesados usá un link de preview.">
         <Input type="file" name="file" accept={accept} required />
