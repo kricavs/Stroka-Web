@@ -40,7 +40,7 @@ test("migración 3: tablas, constraints y append-only", async () => {
   const db = await setup();
   const t = (await rows(db, `select table_name from information_schema.tables where table_schema='public'`)).map((r) => r.table_name);
   for (const n of ["content_comments", "content_approvals", "tasks"]) assert.ok(t.includes(n), n);
-  assert.deepEqual((await rows(db, `select id from schema_migrations order by id`)).map((r) => r.id), [1, 2, 3]);
+  assert.deepEqual((await rows(db, `select id from schema_migrations order by id`)).map((r) => r.id), MIGRATIONS.map((m) => m.id));
   assert.deepEqual((await runMigrations(db, MIGRATIONS)).applied, []);
   const w = await world(db);
   const cid = await w.mk();

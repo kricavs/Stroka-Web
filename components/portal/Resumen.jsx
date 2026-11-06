@@ -1,16 +1,18 @@
 import Link from "next/link";
 import { formatMonthLong, formatSlot, monthKey } from "@/lib/shared/time.js";
 import { getProfile, monthSummary, nextPublication, pendingCounts } from "@/lib/portal/server/content";
+import { deliverableCount } from "@/lib/portal/server/files";
 import { Eyebrow, StatusPill, Title, card } from "./ui";
 
 export default async function Resumen({ scope, base }) {
   const now = new Date();
   const month = monthKey(now);
   const profile = await getProfile(scope);
-  const [summary, next, pending] = await Promise.all([
+  const [summary, next, pending, deliverables] = await Promise.all([
     monthSummary(scope, month, profile.defaultMonthly),
     nextPublication(scope, now),
     pendingCounts(scope),
+    deliverableCount(scope),
   ]);
   const [monthName] = formatMonthLong(month).split(" ");
 
@@ -87,6 +89,13 @@ export default async function Resumen({ scope, base }) {
           <p className="mt-3 text-sm font-light text-[#9a9aa3]">No hay publicaciones próximas por ahora.</p>
         )}
       </section>
+
+      {deliverables > 0 && (
+        <section className={`${card} mt-5 p-6 sm:p-8`}>
+          <p className="text-sm font-light">{deliverables} {deliverables === 1 ? "entregable disponible" : "entregables disponibles"}</p>
+          <Link href={`${base}/archivos`} className="mt-3 inline-flex min-h-[44px] items-center text-[0.7rem] font-semibold uppercase tracking-wider2 text-[var(--accent)] hover:text-[#f4f4f2]">Ver archivos →</Link>
+        </section>
+      )}
 
       <Link href={`${base}/calendario`} className="mt-6 inline-block text-[0.7rem] uppercase tracking-wider2 text-[var(--accent)] hover:text-[#f4f4f2]">
         Ver calendario →
