@@ -126,7 +126,7 @@ test("aplicar es atómico: si falla a mitad, no queda nada a medias", async () =
   const w = await world();
   const r = await importXlsx(w, torquenXlsx());
   let n = 0;
-  const flaky = { ...w.db, tx: (fn) => w.db.tx((t) => fn({ query: async (sql, p) => { if (/INSERT INTO planning_content_links/.test(sql) && ++n === 4) throw new Error("boom"); return t.query(sql, p); } })) };
+  const flaky = { ...w.db, tx: (fn) => w.db.tx((t) => fn({ query: async (sql, p) => { if (/INSERT INTO planning_content_links/.test(sql) && ++n === 1) throw new Error("boom"); return t.query(sql, p); } })) };
   await assert.rejects(P.applyPlanningDraft(flaky, w.a, r.id), /boom/);
   assert.equal(await count(w.db, "content_items"), 0);
   assert.equal(await count(w.db, "planning_content_links"), 0);
@@ -494,4 +494,15 @@ test("editar Pilar/CTA en Studio no invalida una aprobación (son metadata inter
   assert.deepEqual(r.changed.sort(), ["cta", "pillar"]);
   const [c] = await w.db.query(`select status, version from content_items where id=$1`, [id]);
   assert.deepEqual([c.status, c.version], ["approved", 1]);
+});
+
+test("dos borradores distintos del mismo mes (mismo archivo importado dos veces) aplicados a la vez: sin contenidos duplicados", async () => {
+  const w = await world();
+  const buf = torquenXlsx();
+  const [d1, d2] = [await importXlsx(w, buf), await importXlsx(w, buf)];
+  const res = await Promise.allSettled([P.applyPlanningDraft(w.db, w.a, d1.id), P.applyPlanningDraft(w.db, w.a, d2.id)]);
+  assert.ok(res.every((r) => r.status === "fulfilled"));
+  assert.equal(await count(w.db, "content_items", `client_id='${w.a}'`), 6);
+  assert.equal(await count(w.db, "planning_content_links"), 6);
+  assert.equal(await count(w.db, "activity_log", "event='content.created'"), 6);
 });
