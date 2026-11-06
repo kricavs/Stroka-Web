@@ -15,7 +15,7 @@ const at = (day) => new Date(`${day}T15:00:00Z`);
 // the "create content on this day" link, `showClient` adds the client name.
 // Optional layers: `tasks` (open tasks with a due date), `undatedTasks`. Items
 // may carry `risk` ({level,label}) from lib/operations/rules.js.
-export default function CalendarView({ view, anchor, items, undated, href, newHref, showClient, tasks = [], undatedTasks = null }) {
+export default function CalendarView({ view, anchor, items, undated = [], href, newHref, showClient, tasks = [], undatedTasks = null }) {
   const today = ymd(new Date());
   const { byDay } = groupByDay(items);
   const tasksByDay = new Map();
@@ -102,23 +102,25 @@ export default function CalendarView({ view, anchor, items, undated, href, newHr
       {view === "agenda" && <Agenda items={items} tasks={tasks} showClient={showClient} />}
 
       <section className="mt-10 grid gap-8 lg:grid-cols-2">
-        <div className="min-w-0">
-          <h3 className="mb-3 text-[0.62rem] font-semibold uppercase tracking-[0.3em] text-champagne">Contenidos sin fecha</h3>
-          {undated.length === 0 ? (
-            <p className="text-sm font-light text-ash">No hay contenidos sin fecha.</p>
-          ) : (
-            <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-              {undated.map((it) => (
-                <li key={it.id} className="min-w-0">
-                  <Link href={`/studio/contenido/${it.id}`} className="flex items-center gap-2 border border-edge bg-panel p-3 text-sm font-light hover:border-champagne">
-                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: STATUS_COLOR[it.status] }} />
-                    <span className="min-w-0 truncate">{showClient ? `${it.clientName} · ` : ""}{it.title}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        {undated !== null && (
+          <div className="min-w-0">
+            <h3 className="mb-3 text-[0.62rem] font-semibold uppercase tracking-[0.3em] text-champagne">Contenidos sin fecha</h3>
+            {undated.length === 0 ? (
+              <p className="text-sm font-light text-ash">No hay contenidos sin fecha.</p>
+            ) : (
+              <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                {undated.map((it) => (
+                  <li key={it.id} className="min-w-0">
+                    <Link href={`/studio/contenido/${it.id}`} className="flex items-center gap-2 border border-edge bg-panel p-3 text-sm font-light hover:border-champagne">
+                      <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: STATUS_COLOR[it.status] }} />
+                      <span className="min-w-0 truncate">{showClient ? `${it.clientName} · ` : ""}{it.title}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
         {undatedTasks !== null && (
           <div className="min-w-0">
             <h3 className="mb-3 text-[0.62rem] font-semibold uppercase tracking-[0.3em] text-champagne">Tareas sin vencimiento</h3>

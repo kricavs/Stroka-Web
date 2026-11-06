@@ -29,7 +29,7 @@ export default async function CalendarPage({ searchParams }) {
     showTasks ? calendarTasks({ clientId: st.client, priority: st.prio, undated: true }) : [],
   ]);
   const items = rawItems.map((it) => ({ ...it, risk: getContentRisk(it, now) }));
-  const undated = rawUndated;
+  const undated = showContent ? rawUndated : null;
   const base = "/studio/calendario";
   const newHref = (day) => `/studio/contenido/nuevo?date=${day}${st.client ? `&client=${st.client}` : ""}`;
 
