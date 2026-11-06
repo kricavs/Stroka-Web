@@ -6,7 +6,7 @@ import { Button, Field, Input, Select, Textarea } from "./ui";
 import { api } from "./api";
 import { CONTENT_TYPES, PLATFORMS } from "@/lib/shared/content.js";
 
-// initial: { clientId, title, platform, contentType, scheduledLocal, copy, internalNotes,
+// initial: { clientId, title, platform, contentType, scheduledLocal, copy, internalNotes, pillar, cta,
 //            clientNotes, assignee, previewUrl, publishedUrl, status }
 export default function ContentForm({ id, initial, clients }) {
   const router = useRouter();
@@ -56,6 +56,14 @@ export default function ContentForm({ id, initial, clients }) {
         </Field>
         <Field label="Responsable">
           <Input name="assignee" defaultValue={initial.assignee} maxLength={80} />
+        </Field>
+      </div>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Field label="Pilar" hint="Opcional. Solo Studio.">
+          <Input name="pillar" defaultValue={initial.pillar} maxLength={120} />
+        </Field>
+        <Field label="CTA" hint="Opcional. Solo Studio.">
+          <Input name="cta" defaultValue={initial.cta} maxLength={300} />
         </Field>
       </div>
       <Field label="Fecha y hora (Buenos Aires)" hint="Dejá vacío para “sin fecha”.">

@@ -15,11 +15,12 @@ import { getClient, listActivity } from "@/lib/studio/server/clients";
 import ClientOpsHeader from "@/components/studio/ops/ClientOpsHeader";
 import { listContent } from "@/lib/studio/server/content";
 import { getOperations } from "@/lib/studio/server/operations";
+import { listPlanningDrafts } from "@/lib/studio/server/planner";
 import { getDb } from "@/lib/studio/server/db";
 import { viewRange } from "@/lib/shared/calendar.js";
 import { calendarHref, parseCalendarParams } from "@/lib/studio/calendar-params.js";
 import { EVENT_LABEL, PLATFORM_LABEL, STATUS_COLOR, STATUS_LABEL } from "@/lib/shared/content.js";
-import { formatSlot, formatStamp, monthKey, ymd } from "@/lib/shared/time.js";
+import { formatMonthLong, formatSlot, formatStamp, monthKey, ymd } from "@/lib/shared/time.js";
 
 const TABS = [
   ["resumen", "Resumen"],
@@ -95,16 +96,20 @@ async function CalendarioTab({ client, base, searchParams }) {
   const st = parseCalendarParams(searchParams);
   const tabBase = `${base}?tab=calendario`;
   const f = { clientId: client.id, platform: st.platform, status: st.status, type: st.type };
-  const [items, undated] = await Promise.all([
+  const [items, undated, imports] = await Promise.all([
     listContent({ ...f, range: viewRange(st.view, st.date) }),
     listContent({ ...f, undated: true }),
+    listPlanningDrafts(client.id, { limit: 12 }),
   ]);
   return (
     <>
-      <div className="mb-6 flex gap-4 text-[0.68rem] uppercase tracking-wider2">
-        {[["month", "Mes"], ["week", "Semana"], ["agenda", "Agenda"]].map(([v, l]) => (
-          <Link key={v} href={calendarHref(tabBase, st, { view: v })} className={st.view === v ? "text-champagne" : "text-ash hover:text-bone"}>{l}</Link>
-        ))}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 text-[0.68rem] uppercase tracking-wider2">
+        <div className="flex gap-4">
+          {[["month", "Mes"], ["week", "Semana"], ["agenda", "Agenda"]].map(([v, l]) => (
+            <Link key={v} href={calendarHref(tabBase, st, { view: v })} className={st.view === v ? "text-champagne" : "text-ash hover:text-bone"}>{l}</Link>
+          ))}
+        </div>
+        <Link href={`${base}/importar`} className="border border-[#55524d] px-4 py-2.5 hover:border-champagne hover:text-champagne">Importar planificación</Link>
       </div>
       <CalendarView
         view={st.view}
@@ -114,7 +119,37 @@ async function CalendarioTab({ client, base, searchParams }) {
         href={(p) => calendarHref(tabBase, st, p)}
         newHref={(day) => `/studio/contenido/nuevo?client=${client.id}&date=${day}`}
       />
+      <ImportsList clientId={client.id} imports={imports} />
     </>
+  );
+}
+
+const DRAFT_STATUS = { draft: "Borrador", applied: "Aplicado", cancelled: "Cancelado" };
+
+// Audit of plan imports: file, when, month, state, what it did.
+function ImportsList({ clientId, imports }) {
+  if (!imports.length) return null;
+  return (
+    <section className="mt-12">
+      <h3 className="mb-3 text-[0.62rem] font-semibold uppercase tracking-[0.3em] text-champagne">Importaciones</h3>
+      <ul className="divide-y divide-edge border border-edge">
+        {imports.map((d) => {
+          const s = d.summary || {};
+          const done = d.status === "applied" ? `${s.created || 0} creados · ${s.updated || 0} actualizados` : d.status === "draft" ? `${s.items || 0} piezas por revisar` : "Sin cambios en el calendario";
+          return (
+            <li key={d.id}>
+              <Link href={`/studio/clientes/${clientId}/importar/${d.id}`} className="flex flex-wrap items-center gap-x-5 gap-y-1 p-3 text-sm font-light hover:bg-graphite">
+                <span className="min-w-0 flex-1 basis-48 break-words">{d.sourceName || `Planificación (${d.sourceType})`}</span>
+                <span className="w-24 shrink-0 text-xs text-ash">{formatMonthLong(d.period)}</span>
+                <span className="w-24 shrink-0 text-xs uppercase tracking-wider2">{DRAFT_STATUS[d.status]}</span>
+                <span className="text-xs text-ash">{done}{s.warnings ? ` · ${s.warnings} advertencias` : ""}</span>
+                <span className="text-xs text-ash">{formatStamp(new Date(d.appliedAt || d.createdAt))}</span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 

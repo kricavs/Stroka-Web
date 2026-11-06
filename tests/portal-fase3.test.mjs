@@ -46,7 +46,7 @@ async function upload(w, clientId, { filename = "logo.png", bytes = PNG, categor
 
 test("migración 4: tabla, FK compuesta, unicidades", async () => {
   const w = await setup();
-  assert.deepEqual((await w.db.query(`select id from schema_migrations order by id`)).map((r) => r.id), [1, 2, 3, 4]);
+  assert.deepEqual((await w.db.query(`select id from schema_migrations order by id`)).map((r) => r.id), MIGRATIONS.map((m) => m.id)); // fase 3 añadió la 4; las siguientes no la tocan
   assert.deepEqual((await runMigrations(w.db, MIGRATIONS)).applied, []);
   const a = await w.mkClient("A"), b = await w.mkClient("B");
   const cid = await content.createContent(w.db, a.id, { title: "x", platform: "web", contentType: "post" });
