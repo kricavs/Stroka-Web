@@ -33,7 +33,7 @@ const item = (d, code) => d.items.find((i) => i.externalCode === code);
 
 test("migración 5: tablas y constraints; la 1–4 no cambian", async () => {
   const w = await world();
-  assert.deepEqual((await w.db.query(`select id from schema_migrations order by id`)).map((r) => r.id), [1, 2, 3, 4, 5]);
+  assert.deepEqual((await w.db.query(`select id from schema_migrations order by id`)).map((r) => r.id), [1, 2, 3, 4, 5, 6]);
   const ins = (extra) => w.db.query(`insert into planning_drafts (id, client_id, source_type, period_month, default_platform, default_content_status ${extra.cols || ""}) values ('x','${w.a}','${extra.src || "xlsx"}','${extra.month || "2026-11"}','instagram','${extra.st || "production"}' ${extra.vals || ""})`);
   await assert.rejects(ins({ src: "pdf" }), /check/i);
   await assert.rejects(ins({ month: "2026-13" }), /check/i);
