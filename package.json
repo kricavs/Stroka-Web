@@ -11,6 +11,8 @@
     "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
+    "@modelcontextprotocol/client": "^2.4.0",
+    "@modelcontextprotocol/server": "^2.4.0",
     "@react-pdf/renderer": "^4.9.0",
     "@vercel/blob": "^2.8.2",
     "image-size": "1.2.1",
@@ -19,7 +21,8 @@
     "pg": "^8.23.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",

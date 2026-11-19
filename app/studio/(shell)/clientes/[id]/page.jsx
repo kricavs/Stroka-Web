@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import AccessPanel from "@/components/studio/AccessPanel";
+import McpAccessPanel from "@/components/studio/McpAccessPanel";
+import { listMcpTokens } from "@/lib/mcp/server/tokens";
 import CalendarView from "@/components/studio/CalendarView";
 import ClientForm from "@/components/studio/ClientForm";
 import GoalForm from "@/components/studio/GoalForm";
@@ -58,7 +60,12 @@ export default async function ClientPage({ params, searchParams }) {
       {tab === "contenidos" && <ContenidosTab client={client} />}
       {tab === "tareas" && <TareasTab client={client} />}
       {tab === "archivos" && <ArchivosTab client={client} />}
-      {tab === "acceso" && <AccessPanel client={JSON.parse(JSON.stringify(client))} justCreated={searchParams.nuevo === "1"} />}
+      {tab === "acceso" && (
+        <div className="space-y-12">
+          <AccessPanel client={JSON.parse(JSON.stringify(client))} justCreated={searchParams.nuevo === "1"} />
+          <McpAccessPanel clientId={client.id} clientName={client.name} tokens={await listMcpTokens(client.id)} />
+        </div>
+      )}
       {tab === "actividad" && <ActividadTab client={client} />}
     </>
   );
@@ -221,6 +228,8 @@ function describe(a) {
   if (a.event === "content.approval_invalidated") return `v${d.fromVersion} → v${d.toVersion}`;
   if (a.event.startsWith("task.")) return d.title || "";
   if (a.event.startsWith("file.")) return `${d.name || ""}${d.version ? ` · v${d.version}` : ""}`;
+  if (a.event.startsWith("mcp.token_")) return d.label || "";
+  if (a.event.startsWith("mcp.")) return [d.tool, d.fields?.length ? d.fields.join(", ") : null, d.fromVersion !== undefined ? `v${d.fromVersion} → v${d.toVersion}` : null].filter(Boolean).join(" · ");
   if (a.event === "goal.set") return `${d.month}: ${d.contracted}`;
   return "";
 }
@@ -236,7 +245,7 @@ async function ActividadTab({ client }) {
           <span>{EVENT_LABEL[a.event] || a.event}</span>
           {a.content_title && <Link href={`/studio/contenido/${a.content_id}`} className="text-champagne hover:underline">{a.content_title}</Link>}
           <span className="text-xs text-ash">{describe(a)}</span>
-          <span className="ml-auto text-xs text-ash">{a.actor_name}</span>
+          <span className="ml-auto text-xs text-ash">{a.actor_name?.startsWith("Claude") ? `Modificado mediante ${a.actor_name}` : a.actor_name}</span>
         </li>
       ))}
     </ul>
