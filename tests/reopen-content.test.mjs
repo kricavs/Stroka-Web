@@ -36,20 +36,24 @@ test("Studio: published → production cambia solo el estado", async () => {
   assert.deepEqual([r.from, r.to], ["published", "production"]);
   const after = await row(w.db, w.id);
   assert.equal(after.status, "production");
-  for (const k of ["title", "scheduled_at", "copy", "cta", "pillar", "platform", "content_type", "version", "client_id", "client_notes", "internal_notes", "published_at"]) {
+  assert.ok(before.published_at, "antes tenía fecha de publicación");
+  assert.equal(after.published_at, null, "published_at se limpia");
+  for (const k of ["title", "scheduled_at", "copy", "cta", "pillar", "platform", "content_type", "version", "client_id", "client_notes", "internal_notes"]) {
     assert.deepEqual(after[k], before[k], k);
   }
 });
 
 test("Studio: reabrir registra activity y conserva el historial previo", async () => {
   const w = await world();
-  await content.changeStatus(w.db, w.id, "production").catch(() => {}); // no-op esperado: published no transiciona
+  const published0 = (await row(w.db, w.id)).published_at;
   const prior = await w.db.query(`SELECT count(*)::int n FROM activity_log WHERE content_id=$1`, [w.id]);
   await content.reopenContent(w.db, w.id);
   const [ev] = await w.db.query(`SELECT * FROM activity_log WHERE content_id=$1 AND event='content.reopened'`, [w.id]);
   assert.equal(ev.actor_type, "admin");
   assert.equal(ev.actor_name, "Stroka");
-  assert.deepEqual(ev.data, { from: "published", to: "production" });
+  assert.equal(ev.data.from, "published");
+  assert.equal(ev.data.to, "production");
+  assert.equal(ev.data.previous_published_at, new Date(published0).toISOString());
   assert.equal(ev.client_visible, false);
   const total = await w.db.query(`SELECT count(*)::int n FROM activity_log WHERE content_id=$1`, [w.id]);
   assert.equal(total[0].n, prior[0].n + 1);
@@ -108,4 +112,18 @@ test("la ruta de reabrir exige sesión de Studio y nadie más la usa", () => {
   const walk = (d) => readdirSync(d).flatMap((f) => (statSync(join(d, f)).isDirectory() ? walk(join(d, f)) : [join(d, f)]));
   const users = ["lib", "app", "components"].flatMap(walk).filter((f) => /\.(js|jsx|mjs)$/.test(f) && readFileSync(f, "utf8").includes("reopenContent"));
   assert.deepEqual(users.sort(), ["app/api/studio/content/[id]/reopen/route.js", "lib/studio/content-core.js", "lib/studio/server/content.js"].sort());
+});
+
+test("tras reabrir, una publicación real recibe fecha nueva (no la falsa anterior)", async () => {
+  const w = await world();
+  await w.db.query(`UPDATE content_items SET published_at = '2020-01-01T00:00:00Z' WHERE id=$1`, [w.id]);
+  await content.reopenContent(w.db, w.id);
+  for (const to of ["review", "client_review", "approved", "published"]) {
+    if (to === "client_review") await content.changeStatus(w.db, w.id, to);
+    else if (to === "approved") await w.db.query(`UPDATE content_items SET status='approved' WHERE id=$1`, [w.id]);
+    else await content.changeStatus(w.db, w.id, to);
+  }
+  const after = await row(w.db, w.id);
+  assert.equal(after.status, "published");
+  assert.ok(new Date(after.published_at).getFullYear() >= 2025, "fecha nueva, no 2020");
 });
