@@ -21,7 +21,7 @@ import { listPlanningDrafts } from "@/lib/studio/server/planner";
 import { getDb } from "@/lib/studio/server/db";
 import { viewRange } from "@/lib/shared/calendar.js";
 import { calendarHref, parseCalendarParams } from "@/lib/studio/calendar-params.js";
-import { EVENT_LABEL, PLATFORM_LABEL, STATUS_COLOR, STATUS_LABEL } from "@/lib/shared/content.js";
+import { EVENT_LABEL, PLATFORM_LABEL, STATUS_COLOR, STATUS_LABEL, TYPE_LABEL } from "@/lib/shared/content.js";
 import { formatMonthLong, formatSlot, formatStamp, monthKey, ymd } from "@/lib/shared/time.js";
 
 const TABS = [
@@ -169,8 +169,9 @@ async function ContenidosTab({ client }) {
         <li key={it.id}>
           <Link href={`/studio/contenido/${it.id}`} className="flex flex-wrap items-center gap-x-5 gap-y-1 p-3 text-sm font-light hover:bg-graphite">
             <span className="w-32 shrink-0 text-xs text-ash">{it.scheduledAt ? formatSlot(new Date(it.scheduledAt)) : "Sin fecha"}</span>
-            <span className="min-w-0 flex-1 truncate">{it.title}</span>
-            <span className="text-xs text-ash">{PLATFORM_LABEL[it.platform]}</span>
+            <span className="min-w-0 basis-full truncate sm:flex-1 sm:basis-0">{it.title}</span>
+            <span className="text-[0.68rem] uppercase tracking-wider2 text-ash sm:w-20 sm:shrink-0">{TYPE_LABEL[it.contentType] ?? it.contentType}</span>
+            <span className="hidden text-xs text-ash sm:inline">{PLATFORM_LABEL[it.platform]}</span>
             <span className="flex items-center gap-2 text-xs text-ash"><span className="h-2 w-2 rounded-full" style={{ background: STATUS_COLOR[it.status] }} />{STATUS_LABEL[it.status]}</span>
           </Link>
         </li>
