@@ -214,7 +214,7 @@ async function world() {
     return id;
   };
   const content = async (clientId, o) => {
-    const id = await contentCore.createContent(db, clientId, { title: o.title || `C${++n}`, platform: "instagram", contentType: "reel", scheduledLocal: "" });
+    const id = await contentCore.createContent(db, clientId, { title: o.title || `C${++n}`, platform: "instagram", contentType: o.type || "reel", scheduledLocal: "" });
     if (o.status || o.scheduledAt !== undefined || o.sent) {
       await db.query(`UPDATE content_items SET status = COALESCE($2, status), scheduled_at = $3, sent_to_client_at = $4 WHERE id = $1`, [id, o.status || null, o.scheduledAt || null, o.sent || null]);
     }
@@ -297,4 +297,65 @@ test("calendario: tareas con vencimiento en rango y sin vencimiento, filtrables"
 
 test("umbrales: una sola fuente en config.js", () => {
   assert.deepEqual([C.CLIENT_REVIEW_STALE_DAYS, C.TASK_DUE_SOON_DAYS, C.CONTENT_UPCOMING_DAYS, C.PUBLICATION_RISK_HOURS], [3, 2, 7, 48]);
+});
+
+// ---- objetivo mensual: solo reel + carousel -----------------------------------
+
+test("objetivo: solo reel y carousel cuentan; story y post no", async () => {
+  const w = await world();
+  const d = "2026-11-10T15:00:00Z";
+  const counted = async (type) => {
+    const id = await w.mk(`Tipo ${type}`, { monthly: 10 });
+    await w.content(id, { type, status: "production", scheduledAt: d });
+    return (await getOperations(w.db, { now: NOW })).clients.find((c) => c.id === id).progress.planned;
+  };
+  assert.equal(await counted("reel"), 1, "reel cuenta");
+  assert.equal(await counted("carousel"), 1, "carrusel cuenta");
+  assert.equal(await counted("story"), 0, "historia no cuenta");
+  assert.equal(await counted("post"), 0, "post no cuenta");
+});
+
+test("objetivo: 8 reels + 8 carruseles + 12 historias, objetivo 16 → 16/16, 100%, Objetivo cumplido", async () => {
+  const w = await world();
+  const id = await w.mk("Noviembre", { monthly: 16 });
+  const d = "2026-11-10T15:00:00Z";
+  for (let i = 0; i < 8; i++) await w.content(id, { type: "reel", status: "published", scheduledAt: d });
+  for (let i = 0; i < 8; i++) await w.content(id, { type: "carousel", status: "scheduled", scheduledAt: d });
+  for (let i = 0; i < 12; i++) await w.content(id, { type: "story", status: "published", scheduledAt: d });
+  for (let i = 0; i < 3; i++) await w.content(id, { type: "post", status: "production", scheduledAt: d });
+  const row = (await getOperations(w.db, { now: NOW })).clients[0];
+  const p = row.progress;
+  assert.deepEqual([p.planned, p.goal, p.pct], [16, 16, 100]);
+  assert.equal(p.pace, "done");
+  assert.equal(R.PACE_LABEL[p.pace], "Objetivo cumplido");
+  assert.deepEqual([p.published, p.scheduled, p.inProduction], [8, 8, 0], "el desglose también excluye historias y posts");
+  assert.equal(row.alerts.some((a) => a.code.startsWith("pace_")), false);
+  assert.notEqual(row.status, "late");
+});
+
+test("objetivo: historias adicionales no suben el porcentaje ni tapan un atraso", async () => {
+  const w = await world();
+  const id = await w.mk("Atrasado", { monthly: 12 });
+  const d = "2026-11-10T15:00:00Z";
+  await w.content(id, { type: "reel", status: "production", scheduledAt: d });
+  const before = (await getOperations(w.db, { now: at("2026-11-30T15:00:00Z") })).clients[0];
+  for (let i = 0; i < 20; i++) await w.content(id, { type: "story", status: "published", scheduledAt: d });
+  const after = (await getOperations(w.db, { now: at("2026-11-30T15:00:00Z") })).clients[0];
+  assert.deepEqual([after.progress.planned, after.progress.pct], [1, 8]);
+  assert.equal(after.progress.pct, before.progress.pct);
+  assert.equal(after.progress.pace, "behind");
+  assert.equal(after.alerts.some((a) => a.code === "pace_behind"), true, "alerta de ritmo sigue activa");
+});
+
+test("objetivo: los estados siguen igual con el filtro de tipo (cancelled e idea no cuentan)", async () => {
+  const w = await world();
+  const id = await w.mk("Estados", { monthly: 10 });
+  const d = "2026-11-10T15:00:00Z";
+  for (const status of ["cancelled", "idea", "published", "approved", "client_review", "changes_requested", "review"]) {
+    await w.content(id, { type: "reel", status, scheduledAt: d });
+  }
+  const p = (await getOperations(w.db, { now: NOW })).clients[0].progress;
+  assert.equal(p.planned, 5);
+  assert.deepEqual([p.published, p.scheduled, p.withClient, p.inProduction, p.ideas], [1, 1, 2, 1, 1]);
+  assert.deepEqual(C.GOAL_CONTENT_TYPES, ["reel", "carousel"]);
 });

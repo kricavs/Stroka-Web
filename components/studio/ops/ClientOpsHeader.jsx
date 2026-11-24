@@ -28,7 +28,7 @@ export default function ClientOpsHeader({ row, now }) {
       {p.hasGoal ? (
         <>
           <p className="mt-4 font-title text-5xl leading-none">{p.planned}<span className="text-ash"> / {p.goal}</span></p>
-          <p className="mt-2 text-xs uppercase tracking-wider2 text-ash">contenidos planificados · {p.pct}%</p>
+          <p className="mt-2 text-xs uppercase tracking-wider2 text-ash">reels + carruseles planificados · {p.pct}%</p>
         </>
       ) : (
         <p className="mt-4 font-title text-3xl leading-none text-ash">Sin objetivo configurado</p>
