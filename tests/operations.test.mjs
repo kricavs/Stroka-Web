@@ -53,7 +53,7 @@ test("ritmo: inicio, mitad, final, adelantado, atrasado y tolerancia (meta 12)",
   assert.equal(pace(2, "2026-11-15T15:00:00Z"), "behind", "déficit 4 > 3.6");
   assert.equal(pace(9, "2026-11-15T15:00:00Z"), "ahead");
   assert.equal(pace(8, "2026-11-30T15:00:00Z"), "behind", "fin de mes: esperado 12");
-  assert.equal(pace(12, "2026-11-30T15:00:00Z"), "done");
+  assert.equal(pace(12, "2026-11-30T15:00:00Z"), "planned", "calendario completo ≠ cumplido");
   const p = R.getClientMonthProgress({ goal: 12, counts: { production: 2 }, now: at("2026-11-15T15:00:00Z") });
   assert.equal(p.expected, 6);
 });
@@ -214,7 +214,7 @@ async function world() {
     return id;
   };
   const content = async (clientId, o) => {
-    const id = await contentCore.createContent(db, clientId, { title: o.title || `C${++n}`, platform: "instagram", contentType: "reel", scheduledLocal: "" });
+    const id = await contentCore.createContent(db, clientId, { title: o.title || `C${++n}`, platform: "instagram", contentType: o.type || "reel", scheduledLocal: "" });
     if (o.status || o.scheduledAt !== undefined || o.sent) {
       await db.query(`UPDATE content_items SET status = COALESCE($2, status), scheduled_at = $3, sent_to_client_at = $4 WHERE id = $1`, [id, o.status || null, o.scheduledAt || null, o.sent || null]);
     }
@@ -297,4 +297,131 @@ test("calendario: tareas con vencimiento en rango y sin vencimiento, filtrables"
 
 test("umbrales: una sola fuente en config.js", () => {
   assert.deepEqual([C.CLIENT_REVIEW_STALE_DAYS, C.TASK_DUE_SOON_DAYS, C.CONTENT_UPCOMING_DAYS, C.PUBLICATION_RISK_HOURS], [3, 2, 7, 48]);
+});
+
+// ---- objetivo mensual: solo reel + carousel -----------------------------------
+
+test("objetivo: solo reel y carousel cuentan; story y post no", async () => {
+  const w = await world();
+  const d = "2026-11-10T15:00:00Z";
+  const counted = async (type) => {
+    const id = await w.mk(`Tipo ${type}`, { monthly: 10 });
+    await w.content(id, { type, status: "production", scheduledAt: d });
+    return (await getOperations(w.db, { now: NOW })).clients.find((c) => c.id === id).progress.planned;
+  };
+  assert.equal(await counted("reel"), 1, "reel cuenta");
+  assert.equal(await counted("carousel"), 1, "carrusel cuenta");
+  assert.equal(await counted("story"), 0, "historia no cuenta");
+  assert.equal(await counted("post"), 0, "post no cuenta");
+});
+
+test("objetivo: 8 reels + 8 carruseles + 12 historias, objetivo 16 → planificación 16/16 100%", async () => {
+  const w = await world();
+  const id = await w.mk("Noviembre", { monthly: 16 });
+  const d = "2026-11-10T15:00:00Z";
+  for (let i = 0; i < 8; i++) await w.content(id, { type: "reel", status: "published", scheduledAt: d });
+  for (let i = 0; i < 8; i++) await w.content(id, { type: "carousel", status: "published", scheduledAt: d });
+  for (let i = 0; i < 12; i++) await w.content(id, { type: "story", status: "published", scheduledAt: d });
+  for (let i = 0; i < 3; i++) await w.content(id, { type: "post", status: "production", scheduledAt: d });
+  const row = (await getOperations(w.db, { now: NOW })).clients[0];
+  const p = row.progress;
+  assert.deepEqual([p.planned, p.goal, p.pct, p.published], [16, 16, 100, 16]);
+  assert.equal(p.pace, "done");
+  assert.equal(R.PACE_LABEL[p.pace], "Objetivo cumplido");
+  assert.equal(row.alerts.some((a) => a.code.startsWith("pace_")), false);
+  assert.notEqual(row.status, "late");
+});
+
+test("objetivo: historias adicionales no suben el porcentaje ni tapan un atraso", async () => {
+  const w = await world();
+  const id = await w.mk("Atrasado", { monthly: 12 });
+  const d = "2026-11-10T15:00:00Z";
+  await w.content(id, { type: "reel", status: "production", scheduledAt: d });
+  const before = (await getOperations(w.db, { now: at("2026-11-30T15:00:00Z") })).clients[0];
+  for (let i = 0; i < 20; i++) await w.content(id, { type: "story", status: "published", scheduledAt: d });
+  const after = (await getOperations(w.db, { now: at("2026-11-30T15:00:00Z") })).clients[0];
+  assert.deepEqual([after.progress.planned, after.progress.pct], [1, 8]);
+  assert.equal(after.progress.pct, before.progress.pct);
+  assert.equal(after.progress.pace, "behind");
+  assert.equal(after.alerts.some((a) => a.code === "pace_behind"), true, "alerta de ritmo sigue activa");
+});
+
+test("objetivo: los estados siguen igual con el filtro de tipo (cancelled e idea no cuentan)", async () => {
+  const w = await world();
+  const id = await w.mk("Estados", { monthly: 10 });
+  const d = "2026-11-10T15:00:00Z";
+  for (const status of ["cancelled", "idea", "published", "approved", "client_review", "changes_requested", "review"]) {
+    await w.content(id, { type: "reel", status, scheduledAt: d });
+  }
+  const p = (await getOperations(w.db, { now: NOW })).clients[0].progress;
+  assert.equal(p.planned, 5);
+  assert.deepEqual([p.published, p.scheduled, p.withClient, p.inProduction, p.ideas], [1, 1, 2, 1, 1]);
+  assert.deepEqual(C.GOAL_CONTENT_TYPES, ["reel", "carousel"]);
+});
+
+// ---- planificación vs cumplimiento --------------------------------------------
+
+const prog = (counts, goal = 16, now = NOW) => R.getClientMonthProgress({ goal, counts, now });
+
+test("cumplimiento: 16 planificados + 0 publicados → planned, no done", () => {
+  const p = prog({ production: 16 });
+  assert.deepEqual([p.pace, p.pct, p.published, p.publishedPct], ["planned", 100, 0, 0]);
+  assert.equal(R.PACE_LABEL[p.pace], "Calendario completo");
+});
+
+test("cumplimiento: 16 planificados + 2 publicados → 100% planificado, 12,5% publicado, no done", () => {
+  const p = prog({ published: 2, scheduled: 1, production: 13 });
+  assert.deepEqual([p.planned, p.pct, p.published, p.publishedPct, p.pace], [16, 100, 2, 12.5, "planned"]);
+  assert.equal(R.formatPct(p.publishedPct), "12,5%");
+  assert.equal(R.formatPct(100), "100%");
+  assert.equal(R.formatPct(50), "50%");
+});
+
+test("cumplimiento: 16 publicados → done; Objetivo cumplido depende de published", () => {
+  assert.equal(prog({ published: 16 }).pace, "done");
+  assert.equal(prog({ published: 15, production: 5 }).pace, "planned");
+  assert.equal(R.PACE_LABEL.done, "Objetivo cumplido");
+});
+
+test("cumplimiento: planificación incompleta sigue usando el ritmo de planificación", () => {
+  const mid = at("2026-11-24T15:00:00Z");
+  assert.equal(prog({ published: 2, production: 4 }, 16, mid).pace, "behind");
+  assert.equal(prog({ published: 2, production: 4 }, 16, mid).deficit > 0, true);
+});
+
+test("cumplimiento (DB): ejemplo Pistachia 8 reels + 8 carruseles + 12 historias; 2 pub, 1 prog, 13 prod", async () => {
+  const w = await world();
+  const id = await w.mk("Pistachia", { monthly: 16 });
+  const d = "2026-11-28T15:00:00Z";
+  const rel = [];
+  for (let i = 0; i < 8; i++) rel.push(["reel", i]);
+  for (let i = 0; i < 8; i++) rel.push(["carousel", i]);
+  const status = (i) => (i < 2 ? "published" : i === 2 ? "scheduled" : "production");
+  for (let i = 0; i < rel.length; i++) await w.content(id, { type: rel[i][0], status: status(i), scheduledAt: d });
+  for (let i = 0; i < 12; i++) await w.content(id, { type: "story", status: "published", scheduledAt: d });
+  const p = (await getOperations(w.db, { now: NOW })).clients[0].progress;
+  assert.deepEqual([p.planned, p.goal, p.pct, p.published, p.publishedPct, p.pace], [16, 16, 100, 2, 12.5, "planned"]);
+  assert.deepEqual([p.scheduled, p.inProduction], [1, 13]);
+});
+
+test("cumplimiento (DB): 20 historias y posts publicados no cuentan; reels y carruseles publicados sí", async () => {
+  const w = await world();
+  const id = await w.mk("Pub", { monthly: 4 });
+  const d = "2026-11-10T15:00:00Z";
+  const pub = async () => (await getOperations(w.db, { now: NOW })).clients[0].progress.published;
+  for (let i = 0; i < 20; i++) await w.content(id, { type: "story", status: "published", scheduledAt: d });
+  for (let i = 0; i < 3; i++) await w.content(id, { type: "post", status: "published", scheduledAt: d });
+  assert.equal(await pub(), 0);
+  await w.content(id, { type: "reel", status: "published", scheduledAt: d });
+  assert.equal(await pub(), 1);
+  await w.content(id, { type: "carousel", status: "published", scheduledAt: d });
+  assert.equal(await pub(), 2);
+});
+
+test("cumplimiento: calendario completo no genera alertas de ritmo ni marca al cliente como late", () => {
+  const snap = { clients: [{ id: "A", name: "A", goal: 12, monthCounts: { production: 12 } }], content: [], tasks: [] };
+  const row = R.buildOperations(snap, at("2026-11-30T15:00:00Z")).clients[0];
+  assert.equal(row.progress.pace, "planned");
+  assert.equal(row.alerts.some((a) => a.code.startsWith("pace_")), false);
+  assert.equal(row.status, "ok");
 });

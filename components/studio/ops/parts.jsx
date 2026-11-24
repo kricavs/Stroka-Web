@@ -29,15 +29,17 @@ export function Block({ title, count, children, empty, id, className = "" }) {
 export const Empty = ({ children }) => <p className="text-sm font-light text-ash">{children}</p>;
 
 // Thin editorial bar: solid = published, soft = planned (not yet published).
-export function ProgressBar({ progress, className = "" }) {
+// variant: "both" (default, list rows) | "planned" (main bar) | "published" (secondary, discreet).
+export function ProgressBar({ progress, className = "", variant = "both" }) {
   const { goal, planned, published } = progress;
   if (!goal) return <p className={`text-xs font-light text-ash ${className}`}>Sin objetivo configurado</p>;
   const w = (n) => `${Math.min(100, (n / goal) * 100)}%`;
+  const label = variant === "published" ? `${published} de ${goal} publicados` : variant === "planned" ? `${planned} de ${goal} planificados` : `${planned} de ${goal} planificados, ${published} publicados`;
   return (
-    <div className={className} role="img" aria-label={`${planned} de ${goal} planificados, ${published} publicados`}>
-      <div className="relative h-[3px] w-full bg-edge">
-        <span className="absolute inset-y-0 left-0 bg-champagne/40" style={{ width: w(planned) }} />
-        <span className="absolute inset-y-0 left-0 bg-champagne" style={{ width: w(published) }} />
+    <div className={className} role="img" aria-label={label}>
+      <div className={`relative w-full bg-edge ${variant === "published" ? "h-px" : "h-[3px]"}`}>
+        {variant !== "published" && <span className={`absolute inset-y-0 left-0 ${variant === "planned" ? "bg-champagne" : "bg-champagne/40"}`} style={{ width: w(planned) }} />}
+        {variant !== "planned" && <span className={`absolute inset-y-0 left-0 ${variant === "published" ? "bg-champagne/70" : "bg-champagne"}`} style={{ width: w(published) }} />}
       </div>
     </div>
   );
@@ -119,7 +121,7 @@ export function ClientRow({ c }) {
         <span className="flex items-baseline justify-between gap-3">
           <span className="truncate text-sm">{c.name}</span>
           <span className="shrink-0 text-xs tabular-nums text-ash">
-            {p.hasGoal ? <><span className="text-bone">{p.planned}</span> / {p.goal} <span className="ml-1">{p.pct}%</span></> : "Sin objetivo"}
+            {p.hasGoal ? <><span className="text-bone">{p.planned}</span> / {p.goal} <span className="ml-1">{p.pct}%</span>{p.published > 0 && <span className="ml-2 text-[0.65rem] text-ash/70">{p.published} pub.</span>}</> : "Sin objetivo"}
           </span>
         </span>
         <ProgressBar progress={p} className="mt-2" />

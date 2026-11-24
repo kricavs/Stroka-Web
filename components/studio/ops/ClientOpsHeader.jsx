@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { PLATFORM_LABEL, TYPE_LABEL } from "@/lib/shared/content.js";
 import { formatMonthLong } from "@/lib/shared/time.js";
-import { PACE_LABEL, whenLabel } from "@/lib/operations/rules.js";
+import { PACE_LABEL, formatPct, whenLabel } from "@/lib/operations/rules.js";
 import { AlertRow, ProgressBar, StatusPill } from "./parts";
 
 // Operational header of one client (Resumen tab). `row` = one entry of buildOperations().clients.
@@ -28,16 +28,23 @@ export default function ClientOpsHeader({ row, now }) {
       {p.hasGoal ? (
         <>
           <p className="mt-4 font-title text-5xl leading-none">{p.planned}<span className="text-ash"> / {p.goal}</span></p>
-          <p className="mt-2 text-xs uppercase tracking-wider2 text-ash">contenidos planificados · {p.pct}%</p>
+          <p className="mt-2 text-xs uppercase tracking-wider2 text-ash">reels + carruseles planificados · {p.pct}%</p>
         </>
       ) : (
         <p className="mt-4 font-title text-3xl leading-none text-ash">Sin objetivo configurado</p>
       )}
-      <ProgressBar progress={p} className="mt-4" />
+      <ProgressBar progress={p} variant="planned" className="mt-4" />
+      {p.hasGoal && (
+        <>
+          <p className="mt-3 text-sm font-light text-ash"><span className="text-bone">{p.published} / {p.goal}</span> publicados · {formatPct(p.publishedPct)}</p>
+          <ProgressBar progress={p} variant="published" className="mt-2" />
+        </>
+      )}
       <p className="mt-3 text-sm font-light text-ash">
         {parts.map(([n, l], i) => <span key={l}>{i ? " · " : ""}<span className="text-bone">{n}</span> {l}</span>)}
       </p>
-      {p.hasGoal && p.pace !== "early" && p.pace !== "done" && <p className="mt-1 text-xs font-light text-ash">{PACE_LABEL[p.pace]} · se esperan ~{Math.round(p.expected)} a esta altura del mes</p>}
+      {p.hasGoal && p.pace !== "early" && p.pace !== "done" && p.pace !== "planned" && <p className="mt-1 text-xs font-light text-ash">{PACE_LABEL[p.pace]} · se esperan ~{Math.round(p.expected)} a esta altura del mes</p>}
+      {p.pace === "planned" && <p className="mt-1 text-xs font-light text-ash">{PACE_LABEL.planned} · faltan {p.goal - p.published} por publicar</p>}
       {p.pace === "done" && <p className="mt-1 text-xs font-light text-ash">Objetivo del mes cumplido</p>}
 
       <dl className="mt-6 grid gap-x-8 gap-y-4 sm:grid-cols-2">
