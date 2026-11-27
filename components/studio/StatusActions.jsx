@@ -6,7 +6,7 @@ import { Button } from "./ui";
 import { api } from "./api";
 import { STATUS_LABEL, STUDIO_TRANSITIONS } from "@/lib/shared/content.js";
 
-export default function StatusActions({ id, status }) {
+export default function StatusActions({ id, status, clientId }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -29,6 +29,18 @@ export default function StatusActions({ id, status }) {
     setConfirming(false);
     router.refresh();
   }
+  async function remove() {
+    setBusy(true);
+    setError("");
+    const r = await api(`/api/studio/content/${id}/delete`, "POST", {});
+    if (!r.ok) {
+      setBusy(false);
+      return setError(r.data.error || "No se pudo eliminar el contenido.");
+    }
+    // replace: "back" must not return to a page that no longer exists.
+    router.replace(`/studio/clientes/${clientId}?tab=contenidos&eliminado=1`);
+    router.refresh(); // drops cached calendars/lists that still include it
+  }
   const next = STUDIO_TRANSITIONS[status] || [];
   return (
     <div>
@@ -42,6 +54,9 @@ export default function StatusActions({ id, status }) {
             → {STATUS_LABEL[to]}
           </Button>
         ))}
+        {status === "cancelled" && !confirming && (
+          <Button variant="danger" disabled={busy} onClick={() => setConfirming(true)}>Eliminar contenido</Button>
+        )}
       </div>
       {status === "published" && confirming && (
         <div role="alertdialog" className="mt-3 max-w-xl space-y-3 border border-edge bg-panel p-5">
@@ -49,6 +64,16 @@ export default function StatusActions({ id, status }) {
           <div className="flex gap-3">
             <Button variant="ghost" disabled={busy} onClick={() => setConfirming(false)}>Cancelar</Button>
             <Button variant="solid" disabled={busy} onClick={reopen}>{busy ? "Reabriendo…" : "Reabrir contenido"}</Button>
+          </div>
+        </div>
+      )}
+      {status === "cancelled" && confirming && (
+        <div role="alertdialog" aria-label="Eliminar contenido" className="mt-3 max-w-xl space-y-3 border border-[#a0615a] bg-panel p-5">
+          <p className="text-sm">Este contenido se eliminará de Stroka y dejará de aparecer en calendarios y listados.</p>
+          <p className="text-sm font-light text-ash">La acción conservará el registro interno para trazabilidad.</p>
+          <div className="flex gap-3">
+            <Button variant="ghost" disabled={busy} onClick={() => setConfirming(false)}>Cancelar</Button>
+            <Button variant="danger" disabled={busy} onClick={remove}>{busy ? "Eliminando…" : "Eliminar contenido"}</Button>
           </div>
         </div>
       )}

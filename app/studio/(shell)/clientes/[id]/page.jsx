@@ -57,6 +57,7 @@ export default async function ClientPage({ params, searchParams }) {
 
       {tab === "resumen" && <ResumenTab client={client} />}
       {tab === "calendario" && <CalendarioTab client={client} base={base} searchParams={searchParams} />}
+      {tab === "contenidos" && searchParams.eliminado === "1" && <p role="status" className="mb-4 text-sm text-[#6fbf8e]">Contenido eliminado</p>}
       {tab === "contenidos" && <ContenidosTab client={client} />}
       {tab === "tareas" && <TareasTab client={client} />}
       {tab === "archivos" && <ArchivosTab client={client} />}
@@ -244,7 +245,9 @@ async function ActividadTab({ client }) {
         <li key={a.seq} className="flex flex-wrap items-baseline gap-x-5 gap-y-1 p-3 text-sm font-light">
           <span className="w-36 shrink-0 text-xs text-ash">{formatStamp(new Date(a.created_at))}</span>
           <span>{EVENT_LABEL[a.event] || a.event}</span>
-          {a.content_title && <Link href={`/studio/contenido/${a.content_id}`} className="text-champagne hover:underline">{a.content_title}</Link>}
+          {a.content_title && (a.content_deleted
+            ? <span className="text-ash">{a.content_title}</span>
+            : <Link href={`/studio/contenido/${a.content_id}`} className="text-champagne hover:underline">{a.content_title}</Link>)}
           <span className="text-xs text-ash">{describe(a)}</span>
           <span className="ml-auto text-xs text-ash">{a.actor_name?.startsWith("Claude") ? `Modificado mediante ${a.actor_name}` : a.actor_name}</span>
         </li>

@@ -171,7 +171,7 @@ export default function PlannerReview({ draft, clientId }) {
             <ul className="space-y-1 text-sm font-light">
               <li>Se crearán <strong className="font-medium">{s.create || 0}</strong> contenidos</li>
               <li>Se actualizarán <strong className="font-medium">{s.update || 0}</strong></li>
-              <li>Se omitirán <strong className="font-medium">{s.skip || 0}</strong>{s.duplicatesSkipped ? ` (${plural(s.duplicatesSkipped, "posible duplicado", "posibles duplicados")})` : ""}</li>
+              <li>Se omitirán <strong className="font-medium">{s.skip || 0}</strong>{s.duplicatesSkipped ? ` (${plural(s.duplicatesSkipped, "posible duplicado", "posibles duplicados")})` : ""}{s.deletedSkipped ? ` (${plural(s.deletedSkipped, "eliminada antes", "eliminadas antes")})` : ""}</li>
               <li>{s.noChange || 0} sin cambios · {s.unresolvedConflicts || 0} conflictos</li>
             </ul>
             <p className="text-xs font-light text-ash">Todo se aplica junto o no se aplica nada. Estado inicial: {status}.</p>
@@ -204,6 +204,7 @@ function ItemRow({ it, editable, onPatch }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const action = it.skipped ? "skip" : it.action;
+  const wasDeleted = it.analysis?.matchKind === "deleted";
   const applied = it.appliedSnapshot?.outcome;
 
   async function save(e) {
@@ -234,7 +235,7 @@ function ItemRow({ it, editable, onPatch }) {
         </div>
         <div className="flex shrink-0 items-center gap-3">
           <span className="text-[0.6rem] font-semibold uppercase tracking-[0.18em]" style={{ color: ACTION_COLOR[action] }}>
-            {applied ? ({ create: "Creada", update: "Actualizada", no_change: "Sin cambios", skip: "Omitida" }[applied] || ACTION_LABEL[action]) : ACTION_LABEL[action]}
+            {applied ? ({ create: "Creada", update: "Actualizada", no_change: "Sin cambios", skip: "Omitida" }[applied] || ACTION_LABEL[action]) : wasDeleted && !it.skipped ? "Eliminada antes" : ACTION_LABEL[action]}
           </span>
           {editable && (
             <>
@@ -253,9 +254,13 @@ function ItemRow({ it, editable, onPatch }) {
 
       {editable && !it.skipped && it.action === "possible_duplicate" && (
         <div className="mt-3 border border-edge p-3 text-xs font-light">
-          <p>Ya hay un contenido parecido ese día: «{it.analysis.duplicateTitle}». {it.resolution === "create" ? "Se creará igual." : "Por defecto se omite."}</p>
+          <p>
+            {wasDeleted ? "El contenido de esta pieza fue eliminado de Stroka. No se restaura. " : ""}
+            {it.analysis.duplicateTitle ? `Ya hay un contenido parecido ese día: «${it.analysis.duplicateTitle}». ` : ""}
+            {it.resolution === "create" ? (wasDeleted ? "Se creará un contenido nuevo." : "Se creará igual.") : "Por defecto se omite."}
+          </p>
           <div className="mt-2 flex gap-3">
-            <Button className="!px-3 !py-1.5" variant={it.resolution === "create" ? "solid" : "line"} onClick={() => onPatch(it.id, { resolution: "create" })}>Crear igual</Button>
+            <Button className="!px-3 !py-1.5" variant={it.resolution === "create" ? "solid" : "line"} onClick={() => onPatch(it.id, { resolution: "create" })}>{wasDeleted ? "Crear de nuevo" : "Crear igual"}</Button>
             <Button className="!px-3 !py-1.5" variant={it.resolution !== "create" ? "solid" : "line"} onClick={() => onPatch(it.id, { resolution: "skip" })}>Omitir</Button>
           </div>
         </div>

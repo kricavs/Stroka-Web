@@ -24,7 +24,7 @@ test("getDb() real: migra una base nueva y reabre sin reaplicar", () => {
     assert.equal(a.status, 0, a.stderr);
     assert.match(a.stdout, /baseline-studio-schema\): applied/);
     const out1 = JSON.parse(a.stdout.trim().split("\n").pop());
-    assert.deepEqual(out1.m.map((m) => [m.id, m.mode]), [[1, "applied"], [2, "applied"], [3, "applied"], [4, "applied"], [5, "applied"], [6, "applied"]]);
+    assert.deepEqual(out1.m.map((m) => [m.id, m.mode]), [[1, "applied"], [2, "applied"], [3, "applied"], [4, "applied"], [5, "applied"], [6, "applied"], [7, "applied"]]);
     assert.match(a.stdout, /portal-phase3-client-files\): applied/);
     assert.match(a.stdout, /claude-mcp-access\): applied/);
     assert.match(a.stdout, /portal-phase1-clients-content\): applied/);
