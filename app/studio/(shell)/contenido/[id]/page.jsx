@@ -27,7 +27,7 @@ export default async function ContentPage({ params }) {
           <span className="uppercase tracking-wider2">{STATUS_LABEL[item.status]}</span>
           <span className="text-xs text-ash">v{item.version}</span>
         </p>
-        <StatusActions id={item.id} status={item.status} />
+        <StatusActions key={item.status} id={item.id} status={item.status} clientId={item.clientId} />
         {item.status === "client_review" && <ExternalApproval contentId={item.id} />}
         {current && ["approved", "scheduled", "published"].includes(item.status) && (
           <p className="text-sm font-light text-ash">
